@@ -8,7 +8,7 @@ import qrcode
 from io import BytesIO
 
 from Noodles.config import TOKEN, ADMIN_ID, OWNER_ID, PRICES
-#from utils import create_user, delete_user_by_name
+from utils import create_user, delete_user_by_name
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -204,7 +204,7 @@ def callback(call):
 		cursor.execute("UPDATE payments SET status='approved' WHERE id=?", (payment_id,))
 		conn.commit()
 
-		vless_url = "some url" # create_user(user_id)
+		vless_url = create_user(user_id)
 		img = qrcode.make(vless_url)
 
 		buffer = BytesIO()
@@ -293,7 +293,7 @@ def notify_expiring_subscriptions():
 
 			cursor.execute("DELETE FROM users WHERE user_id=?", (user_id,))
 			conn.commit()
-			#delete_user_by_name(user_id)
+			delete_user_by_name(user_id)
 
 		time.sleep(3600)
 
