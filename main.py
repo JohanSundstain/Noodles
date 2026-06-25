@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import qrcode
 from io import BytesIO
 
-from config import TOKEN, ADMIN_ID
+from Noodles.config import TOKEN, ADMIN_ID, OWNER_ID, PRICES
 #from utils import create_user, delete_user_by_name
 
 bot = telebot.TeleBot(TOKEN)
@@ -228,6 +228,9 @@ def callback(call):
 			message_id=call.message.message_id,
 			caption="✅ ПОДТВЕРЖДЕНО"
 		)
+		
+		bot.send_message(OWNER_ID,
+				f"✅ Куплена подписка на сумму {PRICES[int(plan)]}")
 
 		bot.answer_callback_query(call.id)
 		return
@@ -262,7 +265,6 @@ def callback(call):
 
 		bot.answer_callback_query(call.id)
 		return
-
 
 
 def notify_expiring_subscriptions():
