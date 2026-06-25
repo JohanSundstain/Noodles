@@ -44,6 +44,7 @@ chmod +x install_and_run.sh
 token = "YOUR_TELEGRAM_BOT_TOKEN"
 admin_id = 123456789
 owner_id = 123456789
+number = 123456789
 ```
 
 ## Ручной запуск

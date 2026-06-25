@@ -1,8 +1,9 @@
-from secrets import token, admin_id, owner_id
+from secrets import token, admin_id, owner_id, number
 
 TOKEN = token
 ADMIN_ID = admin_id
 OWNER_ID = owner_id
+NUMBER = number
 
 PRICES = {1:100, 3:250, 6:450}
 RESONS = [

@@ -1,4 +1,5 @@
 import telebot
+import random
 import threading
 import time
 import sqlite3
@@ -7,7 +8,7 @@ from datetime import datetime, timedelta
 import qrcode
 from io import BytesIO
 
-from Noodles.config import TOKEN, ADMIN_ID, OWNER_ID, PRICES
+from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER
 from utils import create_user, delete_user_by_name
 
 bot = telebot.TeleBot(TOKEN)
@@ -161,8 +162,16 @@ def callback(call):
 
 		bot.send_message(
 			call.message.chat.id,
-			f"Вы выбрали {plan} мес.\nОтправьте скрин оплаты."
+			f"Вы выбрали {plan} мес."
 		)
+		random_reasons = random.sample(RESONS, 1)
+		bot.send_message(call.message.chat.id,
+						  f"Перевод по номеру телефона: \n+{NUMBER}\nСбер/ТБанк,.\n" \
+						 "В сообщении к переводу обязательно написать:" ) 
+		bot.send_message(call.message.chat.id,
+						f"```\n{random_reasons[0]}\n```",
+						parse_mode="Markdown" ) 
+		bot.send_message(call.message.chat.id, "В чат отправь скриншот операции. По вопросам пиши в личку @Johan_Sundstain" )
 
 		bot.answer_callback_query(call.id)
 		return
