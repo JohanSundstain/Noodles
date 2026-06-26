@@ -4,8 +4,10 @@ TOKEN = token
 ADMIN_ID = admin_id
 OWNER_ID = owner_id
 NUMBER = number
+BONUS = 30
 
-PRICES = {1:100, 3:250, 6:450}
+PRICES = {1:100, 3:250, 6:450, -1: 0}
+DAYS = {1:30, 2:90, 3: 180, -1: 1}
 RESONS = [
     "Подарок",
     "Долг за обед",
