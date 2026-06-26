@@ -5,6 +5,7 @@ ADMIN_ID = admin_id
 OWNER_ID = owner_id
 NUMBER = number
 BONUS = 30
+BOT_LINK="t.me/esp8266_botbotbotbot"
 
 PRICES = {1:100, 3:250, 6:450, -1: 0}
 DAYS = {1:30, 2:90, 3: 180, -1: 1}

@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 try:
-	from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER, BONUS, DAYS
+	from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER, BONUS, DAYS, BOT_LINK
 except ImportError as e:
 	logger.error(f"Ошибка импорта config: {e}")
 	logger.error("Создайте файл config.py со следующими переменными:")
@@ -78,8 +78,7 @@ class Database:
 				self.connection.execute("""
 					CREATE TABLE IF NOT EXISTS users (
 						user_id INTEGER PRIMARY KEY,
-						paid_days INTEGER DEFAULT 0,
-					)
+						paid_days INTEGER DEFAULT 0)
 				""")
 			
 				self.connection.execute("""
@@ -396,7 +395,7 @@ def callback(call):
 		# REF
 		# -------------------------
 		if data == "ref":
-			link = f"https://t.me/JohanNoodles_bot/start={call.from_user.id}"
+			link = f"{BOT_LINK}/start={call.from_user.id}"
 			bot.send_message(call.message.chat.id, f"Ваша реферальная ссылка: {link}")
 			return
 
