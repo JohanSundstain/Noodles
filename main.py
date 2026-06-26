@@ -395,7 +395,7 @@ def callback(call):
 		# REF
 		# -------------------------
 		if data == "ref":
-			link = f"{BOT_LINK}/start={call.from_user.id}"
+			link = f"{BOT_LINK}?start={call.from_user.id}"
 			bot.send_message(call.message.chat.id, f"Ваша реферальная ссылка: {link}")
 			return
 
