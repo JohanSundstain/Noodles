@@ -173,7 +173,7 @@ class Database:
 		else:
 			self.execute("INSERT INTO referrals (user_id) VALUES (?)", (user_id,))
 
-	def create_subsription(self, user_id, days):
+	def create_subscription(self, user_id, days):
 		if not self.check_user(user_id):
 			return
 		self.execute("UPDATE users SET paid_days=paid_days+? WHERE user_id=?", (days, user_id))
