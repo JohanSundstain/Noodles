@@ -376,7 +376,7 @@ def show_plan(call):
 # -------------------------
 @bot.message_handler(commands=['start'])
 def start(message):
-	message = """
+	hello = """
 	<b>📖 Инструкция по подключению</b>
 
 	После покупки вы получите:
@@ -406,6 +406,7 @@ def start(message):
 	<b>@Johan_Sundstain</b>
 	"""
 
+
 	args = message.text.split()
 	user_id = message.from_user.id
 
@@ -424,7 +425,9 @@ def start(message):
 		else:
 			keyboard = user_menu_keyboard()
 
+		bot.send_message(user_id, hello) 
 		bot.send_message(user_id, "Меню", reply_markup=keyboard) 
+
 	except Exception as e:
 		logger.error(f"Ошибка в start: {e}")
 		bot.send_message(user_id, "⚠️ Произошла ошибка. Попробуйте позже.")
