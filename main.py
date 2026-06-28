@@ -184,7 +184,7 @@ class Database:
 		# Если есть приглашающий и награда не получена 
 		if (inviter is not None) and (reward_given == False) and (days > 1):
 			try:
-				bot.send_message(user_id, f"✅ Бонус {BONUS} дней за инвайт получен!")
+				send_temp_message(bot, inviter,f"✅ Бонус {BONUS} дней за инвайт получен!", 120)
 				self.execute("UPDATE users SET paid_days=paid_days + ?  WHERE user_id=?", (BONUS, inviter))
 				self.execute("UPDATE referrals SET reward_given=? WHERE user_id=?", (True, user_id))
 			except Exception as e:
