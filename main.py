@@ -162,7 +162,7 @@ class Database:
 		if self.check_user(user_id):
 			return
 		
-		self.execute("INSERT INTO users (user_id) VALUES (?, ?)", (user_id,))
+		self.execute("INSERT INTO users (user_id) VALUES (?)", (user_id,))
 		
 		if ref is not None and not self.check_user(ref):
 			ref = None
