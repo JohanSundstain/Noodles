@@ -467,7 +467,15 @@ def handle_any(message):
 				caption + "\n\n❗ Неизвестный тип файла"
 			)
 
+		  # УДАЛЯЕМ сообщение пользователя
+		try:
+			bot.delete_message(user_id, message.message_id)
+			logger.info(f"Сообщение пользователя {user_id} удалено")
+		except Exception as e:
+			logger.warning(f"Не удалось удалить сообщение пользователя: {e}")	
+
 		send_temp_message(bot, user_id,"⏳ Файл получен, ожидайте проверки", 30)
+		### show_menu()
 
 	except Exception as e:
 		logger.error(f"Ошибка: {e}")
