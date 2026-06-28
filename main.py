@@ -376,37 +376,6 @@ def show_plan(call):
 # -------------------------
 @bot.message_handler(commands=['start'])
 def start(message):
-	hello = """
-	<b>📖 Инструкция по подключению</b>
-
-	После покупки вы получите:
-	• 🔗 персональную ссылку
-	• 📱 QR-код для быстрого подключения
-
-	<b>Как подключиться?</b>
-
-	1️⃣ Установите клиент <b>V2Ray</b> на своё устройство.
-
-	<b>📱 Android</b>
-	<code>v2rayTun</code>
-
-	<b>🍏 iPhone (iOS)</b>
-	<code>v2ray</code>
-
-	<b>🖥 Windows</b>
-	https://github.com/2dust/v2rayNG/releases
-
-	2️⃣ Откройте приложение.
-
-	3️⃣ Импортируйте полученную ссылку или отсканируйте QR-код.
-
-	<b>❓ Возникли вопросы?</b>
-
-	Напишите:
-	<b>@Johan_Sundstain</b>
-	"""
-
-
 	args = message.text.split()
 	user_id = message.from_user.id
 
@@ -425,7 +394,6 @@ def start(message):
 		else:
 			keyboard = user_menu_keyboard()
 
-		bot.send_message(user_id, hello) 
 		bot.send_message(user_id, "Меню", reply_markup=keyboard) 
 
 	except Exception as e:
