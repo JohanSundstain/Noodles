@@ -645,7 +645,7 @@ def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
 				logger.error(f"Ошибка удаления сообщения: {e}")
 
 		threading.Timer(seconds, delete).start()
-	except:
+	except Exception as e:
 		logger.error(f"Ошибка при отправке временного изображения: {e}")
 
 
