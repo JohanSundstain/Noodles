@@ -30,7 +30,7 @@ except ImportError as e:
 	sys.exit(1)
 
 try:
-	from utils import create_user, delete_user_by_name, get_users_link, qrcode_generate
+	from utils import create_user, delete_user_by_name, get_users_link, qrcode_generate, check_user
 except ImportError as e:
 	logger.error(f"Ошибка импорта utils: {e}")
 	logger.error("Убедитесь, что файл utils.py существует и содержит функции create_user и delete_user_by_name")
@@ -158,15 +158,14 @@ class Database:
 		row = self.fetch_one("SELECT * FROM users WHERE user_id=?", (user_id,))
 		return row is not None
 
-	def create_new_user(self, user_id, ref=None):
+	def create_new_user(self, user_id, message_id ref=None):
 		if self.check_user(user_id):
 			return
 		
-		self.execute("INSERT INTO users (user_id) VALUES (?)", (user_id,))
+		self.execute("INSERT INTO users (user_id, message_id) VALUES (?, ?)", (user_id, message_id))
 		
 		if ref is not None and not self.check_user(ref):
 			ref = None
-
 
 		if ref is not None:
 			self.execute("INSERT INTO referrals (user_id, inviter) VALUES (?, ?)", (user_id, ref))
@@ -196,7 +195,7 @@ class Database:
 			return
 		row = self.fetch_one("SELECT paid_days FROM users WHERE user_id=?", (user_id,))
 		return row["paid_days"] if row else 0
-
+	
 	def reduce_days(self):
 		all_users = self.fetch_all("SELECT user_id, paid_days FROM users")
 		for user_id, paid_days in all_users:
@@ -218,6 +217,133 @@ except Exception as e:
 # временный выбор тарифа (с защитой от потери данных)
 user_plan = {}
 
+def admin_menu_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("🔗 Временная ссылка", callback_data="temp_link"))
+	markup.add(types.InlineKeyboardButton("💳 Купить подписку", callback_data="buy"))
+	markup.add(types.InlineKeyboardButton("📊 Мой статус", callback_data="status"))
+	markup.add(types.InlineKeyboardButton("🔍 Справка", callback_data="help"))
+	return markup
+
+def user_menu_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("💳 Купить подписку", callback_data="buy"))
+	markup.add(types.InlineKeyboardButton("📊 Мой статус", callback_data="status"))
+	markup.add(types.InlineKeyboardButton("🔗 Реферальная ссылка", callback_data="ref"))
+	markup.add(types.InlineKeyboardButton("🔍 Справка", callback_data="help"))
+	return markup
+
+def buy_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("1 месяц - 100₽", callback_data="plan:1"))
+	markup.add(types.InlineKeyboardButton("3 месяца - 250₽", callback_data="plan:3"))
+	markup.add(types.InlineKeyboardButton("6 месяцев - 450₽", callback_data="plan:6"))
+	markup.add(types.InlineKeyboardButton("Ввести код", callback_data="plan:-1"))
+	return markup
+
+def return_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("Меню", callback_data="menu"))
+	return markup
+
+def status_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("🔗 Ссылка", callback_data="status:link"))
+	markup.add(types.InlineKeyboardButton("🔳 QR", callback_data="status:qr"))
+
+	return markup
+
+
+def admin_approve_reject_keyboard():
+	markup = types.InlineKeyboardMarkup()
+	markup.add(types.InlineKeyboardButton("✅ Подтвердить", callback_data="approve"))
+	markup.add(types.InlineKeyboardButton("❌ Отклонить", callback_data="reject"))
+
+	return markup
+
+
+def show_menu(call):
+	user_id = call.from_user.id
+
+	if user_id == ADMIN_ID:
+		keyboard = admin_menu_keyboard()
+	else:
+		keyboard = user_menu_keyboard()
+
+	message_id = db.get_message_id(user_id)
+
+	bot.edit_message_text("Меню", user_id, call.message.message_id, reply_markup=keyboard)
+
+	bot.answer_callback_query(call)
+
+
+def show_buy(call):
+	user_id = call.from_user.id
+
+	keyboard = buy_keyboard()
+	keyboard.add(return_keyboard())
+
+	bot.edit_message_text("Купить подписку", user_id, call.message.message_id, reply_markup=keyboard)
+
+	bot.answer_callback_query(call.id)
+
+
+def show_status(call):
+	user_id = call.from_user.id
+
+	message = ""
+
+	days = db.get_paid_days(user_id)
+	if days == 0:
+		message = "❌ У вас нет активной подписки.\n"
+		bot.edit_message_text(message, user_id, call.from_user.id, reply_markup=return_keyboard())
+		bot.answer_callback_query(call.id)
+	else:
+		message = f"✅ Дней до конца подписки: {days}.\n"
+		keyboard = status_keyboard()
+		keyboard.add(return_keyboard())
+		bot.edit_message_text(message, user_id, call.from_user.id, keyboard )
+		bot.answer_callback_query(call.id)
+
+
+def show_ref(call):
+	user_id = call.from_user.id
+	
+	link = f"{BOT_LINK}?start={call.from_user.id}"
+	bot.edit_message_text(f"Ваша реферальная ссылка: \n```{link}\n```", user_id, call.message.message_id, reply_markup=return_keyboard(), parse_mode="Markdown")
+
+	bot.answer_callback_query(call.id)
+
+
+def show_help(call):
+	user_id = call.from_user.id
+	
+	message = "После покупки вы получаете ссылку и qrcode для подключения к прокси серверу.\n" \
+			"Ссылку необходимо вставить в клиент приложения v2ray.\n" \
+			"Android: 	v2rayTun\n "\
+			"IOS: 		v2ray\n"\
+			"Windows:	https://github.com/2dust/v2rayNG/releases\n" \
+			"Дополнительные вопросы можно писать сюда -> @Johan_Sundstain"
+	
+	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=return_keyboard(), parse_mode="Markdown")
+
+	bot.answer_callback_query(call.id)
+
+def show_plan(call):
+	user_id = call.from_user.id
+	data = call.data
+
+	plan = int(data.split(":")[1])
+	user_plan[call.from_user.id] = plan
+			
+	message = f"Вы выбрали {plan} мес.\т"\
+			f"Перевод по номеру телефона: +{NUMBER}\nСбер/ТБанк\n" \
+			f"Результат операции предоставить в файлом или скриншотом в чат бота"
+
+	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=return_keyboard())
+		
+	bot.answer_callback_query(call.id)
+
 # -------------------------
 # START MENU
 # -------------------------
@@ -225,6 +351,7 @@ user_plan = {}
 def start(message):
 
 	args = message.text.split()
+	user_id = message.from_user.id
 
 	if len(args) > 1:
 		referrer = args[1]
@@ -236,21 +363,15 @@ def start(message):
 	db.create_new_user(message.from_user.id, referrer)
 
 	try:
-		markup = types.InlineKeyboardMarkup()
-		markup.add(types.InlineKeyboardButton("💳 Купить подписку", callback_data="buy"))
-		markup.add(types.InlineKeyboardButton("📊 Мой статус", callback_data="status"))
-		markup.add(types.InlineKeyboardButton("🔗 Реферальная ссылка", callback_data="ref"))
-		markup.add(types.InlineKeyboardButton("🔍 Справка", callback_data="help"))
-		
-		bot.send_message(
-			message.chat.id,
-			"Добро пожаловать 👇",
-			reply_markup=markup
-		)
-		logger.info(f"Пользователь {message.from_user.id} запустил бота")
+		if user_id == ADMIN_ID:
+			keyboard = admin_menu_keyboard()
+		else:
+			keyboard = user_menu_keyboard()
+
+		bot.send_message(user_id, "Меню", reply_markup=keyboard) 
 	except Exception as e:
 		logger.error(f"Ошибка в start: {e}")
-		bot.send_message(message.chat.id, "⚠️ Произошла ошибка. Попробуйте позже.")
+		bot.send_message(user_id, "⚠️ Произошла ошибка. Попробуйте позже.")
 
 # -------------------------
 # PHOTO (скрин оплаты)
@@ -266,11 +387,7 @@ def handle_any(message):
 			bot.send_message(user_id, "❗ Сначала выбери тариф")
 			return
 
-		markup = types.InlineKeyboardMarkup()
-		markup.add(
-			types.InlineKeyboardButton("✅ Подтвердить", callback_data=f"approve:{user_id}:{plan}"),
-			types.InlineKeyboardButton("❌ Отклонить", callback_data=f"reject:{user_id}:{plan}")
-		)
+		keyboard = admin_approve_reject_keyboard()
 
 		caption = f"🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\nID: {user_id}"
 
@@ -284,7 +401,7 @@ def handle_any(message):
 				ADMIN_ID,
 				file_id,
 				caption=caption,
-				reply_markup=markup
+				reply_markup=keyboard
 			)
 
 		# -------------------------
@@ -298,7 +415,7 @@ def handle_any(message):
 				ADMIN_ID,
 				file_id,
 				caption=caption,
-				reply_markup=markup
+				reply_markup=keyboard
 			)
 
 		# -------------------------
@@ -312,7 +429,7 @@ def handle_any(message):
 				ADMIN_ID,
 				file_id,
 				caption=caption,
-				reply_markup=markup
+				reply_markup=keyboard
 			)
 
 		# -------------------------
@@ -324,7 +441,7 @@ def handle_any(message):
 				caption + "\n\n❗ Неизвестный тип файла"
 			)
 
-		bot.send_message(user_id, "⏳ Файл получен, ожидайте проверки")
+		send_temp_message(user_id,"⏳ Файл получен, ожидайте проверки", 30)
 
 	except Exception as e:
 		logger.error(f"Ошибка: {e}")
@@ -341,113 +458,37 @@ def callback(call):
 		# BUY MENU
 		# -------------------------
 		if data == "buy":
-			markup = types.InlineKeyboardMarkup()
-			markup.add(types.InlineKeyboardButton("1 месяц - 100₽", callback_data="plan:1"))
-			markup.add(types.InlineKeyboardButton("3 месяца - 250₽", callback_data="plan:3"))
-			markup.add(types.InlineKeyboardButton("6 месяцев - 450₽", callback_data="plan:6"))
-			
-			bot.send_message(call.message.chat.id, "Выберите тариф:", reply_markup=markup)
-			bot.answer_callback_query(call.id)
+			show_buy(call)
 			return
 		
 		# -------------------------
 		# STATUS
 		# -------------------------
 		if data == "status":
-			user_id = call.from_user.id
-			
-			days = db.get_paid_days(user_id)
-			
-			if days == 0:
-				bot.send_message(user_id, "❌ У вас нет активной подписки")
-				bot.answer_callback_query(call.id)
-				return
-			
-			# Генерация ссылки
-			try:
-				vless_url = get_users_link(user_id)
-				if vless_url:
-					try:
-						buffer = qrcode_generate(vless_url)
-						bot.send_photo(user_id, buffer)
-					except Exception as e:
-						logger.error(f"Ошибка генерации QR-кода: {e}")
-						
-					bot.send_message(
-						user_id,
-						f"```\n{vless_url}\n```",
-						parse_mode="Markdown"
-					)
-				else:
-					logger.error(f"Не удалось найти ссылку {user_id}")
-					bot.send_message(user_id, "⚠️ Не удалось найти ссылку. Обратитесь в поддержку.")
-
-			except Exception as e:
-				logger.error(f"Ошибка создания пользователя {user_id}: {e}")
-				bot.send_message(user_id, "⚠️ Не удалось найти ссылку. Обратитесь в поддержку.")
-				
-			bot.send_message(user_id, f"✅ Дней до конца подписки: {(days)}")
-			
-			bot.answer_callback_query(call.id)
+			show_status(call)
 			return
-		
+	
 		# -------------------------
 		# REF
 		# -------------------------
 		if data == "ref":
-			link = f"{BOT_LINK}?start={call.from_user.id}"
-			bot.send_message(call.message.chat.id, f"Ваша реферальная ссылка: {link}")
+			show_ref(call)
 			return
 
 		# -------------------------
 		# HELP
 		# -------------------------
 		if data == "help":
-			message = "После покупки вы получаете ссылку и qrcode для подключения к прокси серверу.\n" \
-			"Ссылку необходимо вставить в клиент приложения v2ray.\n" \
-			"Android: 	v2rayTun\n "\
-			"IOS: 		v2ray\n"\
-			"Windows:	https://github.com/2dust/v2rayNG/releases\n" \
-			"Дополнительные вопросы можно писать сюда -> @Johan_Sundstain"
-			bot.send_message(call.message.chat.id, message)
+			show_help()
 			return
-
 
 		# -------------------------
 		# CHOOSE PLAN
 		# -------------------------
 		if data.startswith("plan:"):
-			plan = int(data.split(":")[1])
-			user_plan[call.from_user.id] = plan
-			
-			bot.send_message(
-				call.message.chat.id,
-				f"Вы выбрали {plan} мес."
-			)
-			
-			# Безопасное получение случайной причины
-			try:
-				random_reason = random.choice(RESONS) if RESONS else "Оплата подписки"
-			except (IndexError, TypeError):
-				random_reason = "Оплата подписки"
-			
-			bot.send_message(
-				call.message.chat.id,
-				f"Перевод по номеру телефона: +{NUMBER}\nСбер/ТБанк\nВ сообщении к переводу обязательно написать:"
-			)
-			bot.send_message(
-				call.message.chat.id,
-				f"```\n{random_reason}\n```",
-				parse_mode="Markdown"
-			)
-			bot.send_message(
-				call.message.chat.id,
-				"В чат отправь скриншот операции. По вопросам пиши в личку @Johan_Sundstain"
-			)
-			
-			bot.answer_callback_query(call.id)
+			show_plan(call)
 			return
-		
+			
 		# -------------------------
 		# APPROVE
 		# -------------------------
@@ -459,33 +500,29 @@ def callback(call):
 			
 			# Генерация ссылки
 			try:
-				vless_url = create_user(user_id)
-				
+				if not check_user(str(user_id)):
+					vless_url = create_user(user_id)
+				else:
+					vless_url = get_users_link(user_id)
+
 				if vless_url:
 					# Генерация QR-кода
 					try:
 						buffer = qrcode_generate(vless_url)
-						bot.send_photo(user_id, buffer)
+						send_temp_photo(bot, user_id, buffer, 60)
+						send_temp_message(bot, user_id, f"```\n{vless_url}\n```", 60, parse_mode="Markdown" )
 					except Exception as e:
 						logger.error(f"Ошибка генерации QR-кода: {e}")
 					
-					bot.send_message(
-						user_id,
-						f"```\n{vless_url}\n```",
-						parse_mode="Markdown"
-					)
 				else:
 					logger.error(f"Не удалось создать ссылку для пользователя {user_id}")
-					bot.send_message(user_id, "⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.")
+					send_temp_message(bot, user_id, "⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.", 60)
 					
 			except Exception as e:
 				logger.error(f"Ошибка создания пользователя {user_id}: {e}")
-				bot.send_message(user_id, "⚠️ Ошибка при создании подключения. Обратитесь в поддержку.")
+				send_temp_message(bot, user_id, "⚠️ Ошибка при создании подключения. Обратитесь в поддержку.", 60)
 			
-			bot.send_message(
-				user_id,
-				f"✅ Вы купили {DAYS[plan]} дней подписки"
-			)
+			send_temp_message(bot, user_id, f"✅ Вы купили {DAYS[plan]} дней подписки", 60)
 			
 			try:
 				bot.edit_message_caption(
@@ -498,7 +535,13 @@ def callback(call):
 			
 			bot.send_message(OWNER_ID, f"✅ Куплена подписка на сумму {PRICES.get(int(plan), 'неизвестно')} ₽")
 			
-			bot.answer_callback_query(call.id, "✅ Подписка подтверждена")
+			send_temp_message(bot, user_id, f"✅ Подписка подтверждена", 60)
+			message = "Сообщение исчезнет через миниту. Повторно получить ссылку можно по кнопке \"Статус\" "
+
+			send_temp_message(bot, user_id, message, 60)
+
+			bot.answer_callback_query(call.id)
+
 			return
 		
 		# -------------------------
@@ -508,10 +551,7 @@ def callback(call):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])			
 			try:
-				bot.send_message(
-					user_id,
-					"❌ Оплата отклонена. Попробуйте ещё раз или свяжитесь с поддержкой."
-				)
+				send_temp_message(bot, user_id,"❌ Оплата отклонена. Попробуйте ещё раз или свяжитесь с поддержкой.", 30)
 			except Exception as e:
 				logger.warning(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
 			
@@ -524,7 +564,7 @@ def callback(call):
 			except Exception as e:
 				logger.warning(f"Не удалось отредактировать сообщение администратора: {e}")
 			
-			bot.answer_callback_query(call.id, "❌ Платёж отклонён")
+			bot.answer_callback_query(call.id)
 			return
 		
 	except Exception as e:
@@ -533,6 +573,29 @@ def callback(call):
 			bot.answer_callback_query(call.id, "⚠️ Произошла ошибка", show_alert=True)
 		except:
 			pass
+
+def send_temp_message(bot, chat_id, text, seconds=30, **kwargs):
+	msg = bot.send_message(chat_id, text, **kwargs)
+
+	def delete():
+		try:
+			bot.delete_message(chat_id, msg.message_id)
+		except:
+			logger.error(f"Ошибка удаления сообщения: {e}")
+
+	threading.Timer(seconds, delete).start()
+
+def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
+	msg = bot.send_photo(chat_id, buffer, **kwargs)
+
+	def delete():
+		try:
+			bot.delete_message(chat_id, msg.message_id)
+		except:
+			logger.error(f"Ошибка удаления сообщения: {e}")
+
+	threading.Timer(seconds, delete).start()
+
 
 def run_schedule():
 	while True:

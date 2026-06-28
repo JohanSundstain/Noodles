@@ -1,4 +1,5 @@
 import subprocess
+import time
 import re
 import qrcode
 from io import BytesIO
@@ -32,6 +33,11 @@ def get_user_list():
 	
 	users = re.findall(r'\d+\.\s+(\w+)', stdout)
 	return users
+
+def check_user(user_id):
+	users = get_user_list()
+	
+	return user_id in users
 
 
 def delete_user_by_name(username):
@@ -89,3 +95,8 @@ def qrcode_generate(url):
 	buffer.seek(0)
 	
 	return buffer
+
+
+def temp_link_deleter(user_id):
+	time.sleep(3600)
+	delete_user_by_name(user_id)
