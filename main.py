@@ -536,34 +536,40 @@ def callback(call):
 		if data.startswith("approve"):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])
-								
-			db.create_subscription(user_id, DAYS[plan])
-			
-			# Генерация ссылки
-			try:
-				if not check_user(str(user_id)):
-					vless_url = create_user(user_id)
-				else:
-					vless_url = get_users_link(user_id)
 
-				if vless_url:
-					# Генерация QR-кода
-					try:
-						buffer = qrcode_generate(vless_url)
-						send_temp_photo(bot, user_id, buffer, 60)
-						send_temp_message(bot, user_id, f"<code>{vless_url}</code>", 60, parse_mode="HTML" )
-					except Exception as e:
-						logger.error(f"Ошибка генерации QR-кода: {e}")
-					
-				else:
-					logger.error(f"Не удалось создать ссылку для пользователя {user_id}")
-					send_temp_message(bot, user_id, "⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.", 60)
-					
-			except Exception as e:
-				logger.error(f"Ошибка создания пользователя {user_id}: {e}")
-				send_temp_message(bot, user_id, "⚠️ Ошибка при создании подключения. Обратитесь в поддержку.", 60)
+			is_update = True if db.get_paid_days() > 0 else False
+
+			db.create_subscription(user_id, DAYS[plan])
+
+			if is_update:
+				message = "✅ Подписка продлена."
+				send_temp_message(bot, user_id, message, 30)
+			else:
+				# Генерация ссылки
+				try:
+					if not check_user(str(user_id)):
+						vless_url = create_user(user_id)
+					else:
+						vless_url = get_users_link(user_id)
+
+					if vless_url:
+						# Генерация QR-кода
+						try:
+							buffer = qrcode_generate(vless_url)
+							send_temp_photo(bot, user_id, buffer, 30)
+							send_temp_message(bot, user_id, f"<code>{vless_url}</code>", 30, parse_mode="HTML")
+						except Exception as e:
+							logger.error(f"Ошибка генерации QR-кода: {e}")
+						
+					else:
+						logger.error(f"Не удалось создать ссылку для пользователя {user_id}")
+						send_temp_message(bot, user_id, "⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.", 30)
+						
+				except Exception as e:
+					logger.error(f"Ошибка создания пользователя {user_id}: {e}")
+					send_temp_message(bot, user_id, "⚠️ Ошибка при создании подключения. Обратитесь в поддержку.", 30)
 			
-			send_temp_message(bot, user_id, f"✅ Вы купили {DAYS[plan]} дней подписки", 60)
+			send_temp_message(bot, user_id, f"✅ Вы купили {DAYS[plan]} дней подписки", 30)
 			
 			try:
 				bot.edit_message_caption(
@@ -576,10 +582,8 @@ def callback(call):
 			
 			bot.send_message(OWNER_ID, f"✅ Куплена подписка на сумму {PRICES.get(int(plan), 'неизвестно')} ₽")
 			
-			send_temp_message(bot, user_id, f"✅ Подписка подтверждена", 60)
-			message = "Сообщение исчезнет через миниту. Повторно получить ссылку можно по кнопке \"Статус\" "
-
-			send_temp_message(bot, user_id, message, 60)
+			message = "Сообщение исчезнет через 30 сек.\nПовторно получить ссылку: <code>Меню</code> -> <code>Статус</code>"
+			send_temp_message(bot, user_id, message, 30, parse_mode="HTML")
 
 			bot.answer_callback_query(call.id)
 

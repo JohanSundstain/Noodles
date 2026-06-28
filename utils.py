@@ -36,7 +36,7 @@ def get_user_list():
 
 def check_user(user_id):
 	users = get_user_list()
-	
+
 	return user_id in users
 
 
