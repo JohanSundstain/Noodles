@@ -252,8 +252,8 @@ def add_return_keyboard(markup=None):
 
 def status_keyboard():
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("🔗 Ссылка", callback_data="status:link"))
-	markup.add(types.InlineKeyboardButton("🔳 QR", callback_data="status:qr"))
+	markup.add(types.InlineKeyboardButton("🔗 Ссылка", callback_data="link"))
+	markup.add(types.InlineKeyboardButton("🔳 QR", callback_data="qr"))
 
 	return markup
 
@@ -612,7 +612,22 @@ def callback(call):
 			
 			bot.answer_callback_query(call.id)
 			return
-		
+
+		if data == "qr":
+			user_id = call.from_user.id
+			vless_url = get_users_link(user_id)
+			buffer = qrcode_generate(vless_url)
+			send_temp_photo(bot, user_id, buffer, 30, caption="Сообщение исчезнет через 30 сек.")
+			bot.answer_callback_query(call.id)
+
+		if data == "link":
+			user_id = call.from_user.id
+			vless_url = get_users_link(user_id)
+			message = f"<code>{}</code>"
+			send_temp_message(bot, user_id, message, 30, parse_mode="HTML")
+			send_temp_message(bot, user_id, "Сообщение исчезнет через 30 сек.", 30, parse_mode="HTML")
+			bot.answer_callback_query(call.id)
+
 	except Exception as e:
 		logger.error(f"Ошибка в callback: {e}")
 		try:
