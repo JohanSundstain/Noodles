@@ -7,7 +7,6 @@ import sqlite3
 import logging
 import sys
 from telebot import types
-from datetime import datetime, timedelta
 from contextlib import contextmanager
 
 # Настройка логирования
@@ -30,7 +29,7 @@ except ImportError as e:
 	sys.exit(1)
 
 try:
-	from utils import create_user, delete_user_by_name, get_users_link, qrcode_generate, check_user
+	from utils import create_user, delete_users_link, get_users_link, qrcode_generate, check_user
 except ImportError as e:
 	logger.error(f"Ошибка импорта utils: {e}")
 	logger.error("Убедитесь, что файл utils.py существует и содержит функции create_user и delete_user_by_name")
@@ -184,15 +183,16 @@ class Database:
 		inviter, reward_given = row
 		# Если есть приглашающий и награда не получена 
 		if (inviter is not None) and (reward_given == False) and (days > 1):
-			bot.send_message(user_id, f"✅ Бонус {BONUS} дней за инвайт получен!")
-			self.execute("UPDATE users SET paid_days=paid_days + ?  WHERE user_id=?", (BONUS, inviter))
-			self.execute("UPDATE referrals SET reward_given=? WHERE user_id=?", (True, user_id))
+			try:
+				bot.send_message(user_id, f"✅ Бонус {BONUS} дней за инвайт получен!")
+				self.execute("UPDATE users SET paid_days=paid_days + ?  WHERE user_id=?", (BONUS, inviter))
+				self.execute("UPDATE referrals SET reward_given=? WHERE user_id=?", (True, user_id))
+			except Exception as e:
+				logger.error(f"Ошибка при выдаче бонуса: {e}")
 		else:
 			return
 		
 	def get_paid_days(self, user_id):
-		if not self.check_user(user_id):
-			return
 		row = self.fetch_one("SELECT paid_days FROM users WHERE user_id=?", (user_id,))
 		return row["paid_days"] if row else 0
 	
@@ -205,7 +205,8 @@ class Database:
 			if paid_days <= 0:
 				paid_days = 0
 				bot.send_message(user_id, "⚠️ Ваша подписка истекла.\nЧтобы не видеть это сообщение заблокируйте и удалите бота")
-				delete_user_by_name(user_id)
+				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (0, user_id))
+				delete_users_link(str(user_id))
 			else:
 				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (paid_days, user_id))
 
@@ -533,7 +534,7 @@ def callback(call):
 		# -------------------------
 		# APPROVE
 		# -------------------------
-		if data.startswith("approve"):
+		if data.startswith("approve:"):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])
 
@@ -592,7 +593,7 @@ def callback(call):
 		# -------------------------
 		# REJECT
 		# -------------------------
-		if data.startswith("reject"):
+		if data.startswith("reject:"):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])			
 			try:
@@ -620,26 +621,32 @@ def callback(call):
 			pass
 
 def send_temp_message(bot, chat_id, text, seconds=30, **kwargs):
-	msg = bot.send_message(chat_id, text, **kwargs)
+	try:
+		msg = bot.send_message(chat_id, text, **kwargs)
 
-	def delete():
-		try:
-			bot.delete_message(chat_id, msg.message_id)
-		except:
-			logger.error(f"Ошибка удаления сообщения: {e}")
+		def delete():
+			try:
+				bot.delete_message(chat_id, msg.message_id)
+			except Exception as e:
+				logger.error(f"Ошибка удаления сообщения: {e}")
 
-	threading.Timer(seconds, delete).start()
+		threading.Timer(seconds, delete).start()
+	except Exception as e:
+		logger.error(f"Ошибка при отправке временного сообщения: {e}")
 
 def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
-	msg = bot.send_photo(chat_id, buffer, **kwargs)
+	try:
+		msg = bot.send_photo(chat_id, buffer, **kwargs)
 
-	def delete():
-		try:
-			bot.delete_message(chat_id, msg.message_id)
-		except:
-			logger.error(f"Ошибка удаления сообщения: {e}")
+		def delete():
+			try:
+				bot.delete_message(chat_id, msg.message_id)
+			except Exception as e:
+				logger.error(f"Ошибка удаления сообщения: {e}")
 
-	threading.Timer(seconds, delete).start()
+		threading.Timer(seconds, delete).start()
+	except:
+		logger.error(f"Ошибка при отправке временного изображения: {e}")
 
 
 def run_schedule():

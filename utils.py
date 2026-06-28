@@ -40,16 +40,16 @@ def check_user(user_id):
 	return user_id in users
 
 
-def delete_user_by_name(username):
+def delete_users_link(user_id):
 	"""Удаляет пользователя по имени"""
 	users = get_user_list()
 	
-	if username not in users:
-		print(f"Пользователь {username} не найден")
+	if user_id not in users:
+		print(f"Пользователь {user_id} не найден")
 		return
 	
 	# Находим номер пользователя
-	user_number = users.index(username) + 1
+	user_number = users.index(user_id) + 1
 	
 	# Запускаем rmuser и отправляем номер
 	process = subprocess.Popen(
