@@ -158,11 +158,11 @@ class Database:
 		row = self.fetch_one("SELECT * FROM users WHERE user_id=?", (user_id,))
 		return row is not None
 
-	def create_new_user(self, user_id, message_id ref=None):
+	def create_new_user(self, user_id, ref=None):
 		if self.check_user(user_id):
 			return
 		
-		self.execute("INSERT INTO users (user_id, message_id) VALUES (?, ?)", (user_id, message_id))
+		self.execute("INSERT INTO users (user_id) VALUES (?, ?)", (user_id,))
 		
 		if ref is not None and not self.check_user(ref):
 			ref = None
@@ -198,7 +198,9 @@ class Database:
 	
 	def reduce_days(self):
 		all_users = self.fetch_all("SELECT user_id, paid_days FROM users")
-		for user_id, paid_days in all_users:
+		for row in all_users:  # Исправлено: row - это словарь
+			user_id = row["user_id"]
+			paid_days = row["paid_days"]
 			paid_days -= 1
 			if paid_days <= 0:
 				paid_days = 0
@@ -241,8 +243,9 @@ def buy_keyboard():
 	markup.add(types.InlineKeyboardButton("Ввести код", callback_data="plan:-1"))
 	return markup
 
-def return_keyboard():
-	markup = types.InlineKeyboardMarkup()
+def add_return_keyboard(markup=None):
+	if markup is None:
+		markup = types.InlineKeyboardMarkup()
 	markup.add(types.InlineKeyboardButton("Меню", callback_data="menu"))
 	return markup
 
@@ -254,10 +257,10 @@ def status_keyboard():
 	return markup
 
 
-def admin_approve_reject_keyboard():
+def admin_approve_reject_keyboard(user_id, plan):
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("✅ Подтвердить", callback_data="approve"))
-	markup.add(types.InlineKeyboardButton("❌ Отклонить", callback_data="reject"))
+	markup.add(types.InlineKeyboardButton("✅ Подтвердить", callback_data=f"approve:{user_id}:{plan}"))
+	markup.add(types.InlineKeyboardButton("❌ Отклонить", callback_data=f"reject:{user_id}:{plan}"))
 
 	return markup
 
@@ -270,18 +273,15 @@ def show_menu(call):
 	else:
 		keyboard = user_menu_keyboard()
 
-	message_id = db.get_message_id(user_id)
-
 	bot.edit_message_text("Меню", user_id, call.message.message_id, reply_markup=keyboard)
 
-	bot.answer_callback_query(call)
+	bot.answer_callback_query(call.id)
 
 
 def show_buy(call):
 	user_id = call.from_user.id
 
-	keyboard = buy_keyboard()
-	keyboard.add(return_keyboard())
+	keyboard = add_return_keyboard(buy_keyboard())
 
 	bot.edit_message_text("Купить подписку", user_id, call.message.message_id, reply_markup=keyboard)
 
@@ -296,13 +296,12 @@ def show_status(call):
 	days = db.get_paid_days(user_id)
 	if days == 0:
 		message = "❌ У вас нет активной подписки.\n"
-		bot.edit_message_text(message, user_id, call.from_user.id, reply_markup=return_keyboard())
+		bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=add_return_keyboard())
 		bot.answer_callback_query(call.id)
 	else:
 		message = f"✅ Дней до конца подписки: {days}.\n"
-		keyboard = status_keyboard()
-		keyboard.add(return_keyboard())
-		bot.edit_message_text(message, user_id, call.from_user.id, keyboard )
+		keyboard = add_return_keyboard(status_keyboard())
+		bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=keyboard)
 		bot.answer_callback_query(call.id)
 
 
@@ -310,7 +309,7 @@ def show_ref(call):
 	user_id = call.from_user.id
 	
 	link = f"{BOT_LINK}?start={call.from_user.id}"
-	bot.edit_message_text(f"Ваша реферальная ссылка: \n```{link}\n```", user_id, call.message.message_id, reply_markup=return_keyboard(), parse_mode="Markdown")
+	bot.edit_message_text(f"Ваша реферальная ссылка: <code>{link}</code>", user_id, call.message.message_id, reply_markup=add_return_keyboard(), parse_mode="HTML")
 
 	bot.answer_callback_query(call.id)
 
@@ -318,14 +317,37 @@ def show_ref(call):
 def show_help(call):
 	user_id = call.from_user.id
 	
-	message = "После покупки вы получаете ссылку и qrcode для подключения к прокси серверу.\n" \
-			"Ссылку необходимо вставить в клиент приложения v2ray.\n" \
-			"Android: 	v2rayTun\n "\
-			"IOS: 		v2ray\n"\
-			"Windows:	https://github.com/2dust/v2rayNG/releases\n" \
-			"Дополнительные вопросы можно писать сюда -> @Johan_Sundstain"
+	message = """
+	<b>📖 Инструкция по подключению</b>
+
+	После покупки вы получите:
+	• 🔗 персональную ссылку
+	• 📱 QR-код для быстрого подключения
+
+	<b>Как подключиться?</b>
+
+	1️⃣ Установите клиент <b>V2Ray</b> на своё устройство.
+
+	<b>📱 Android</b>
+	<code>v2rayTun</code>
+
+	<b>🍏 iPhone (iOS)</b>
+	<code>v2ray</code>
+
+	<b>🖥 Windows</b>
+	https://github.com/2dust/v2rayNG/releases
+
+	2️⃣ Откройте приложение.
+
+	3️⃣ Импортируйте полученную ссылку или отсканируйте QR-код.
+
+	<b>❓ Возникли вопросы?</b>
+
+	Напишите:
+	<b>@Johan_Sundstain</b>
+	"""
 	
-	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=return_keyboard(), parse_mode="Markdown")
+	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=add_return_keyboard(), parse_mode="HTML")
 
 	bot.answer_callback_query(call.id)
 
@@ -336,11 +358,15 @@ def show_plan(call):
 	plan = int(data.split(":")[1])
 	user_plan[call.from_user.id] = plan
 			
-	message = f"Вы выбрали {plan} мес.\т"\
-			f"Перевод по номеру телефона: +{NUMBER}\nСбер/ТБанк\n" \
-			f"Результат операции предоставить в файлом или скриншотом в чат бота"
-
-	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=return_keyboard())
+	message = (
+		f"<b>Вы выбрали:</b> {plan} мес.\n\n"
+		f"<b>Оплата по номеру телефона:</b>\n"
+		f"<code>+{NUMBER}</code>\n"
+		f"<b>Банки:</b> Сбер / ТБанк\n\n"
+		f"После оплаты отправьте <b>результат операции</b> "
+		f"(файл или скриншот) в чат бота."
+	)
+	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=add_return_keyboard(), parse_mode="HTML")
 		
 	bot.answer_callback_query(call.id)
 
@@ -354,7 +380,7 @@ def start(message):
 	user_id = message.from_user.id
 
 	if len(args) > 1:
-		referrer = args[1]
+		referrer = int(args[1])
 		if referrer == message.from_user.id:
 			referrer = None
 	else:
@@ -387,7 +413,7 @@ def handle_any(message):
 			bot.send_message(user_id, "❗ Сначала выбери тариф")
 			return
 
-		keyboard = admin_approve_reject_keyboard()
+		keyboard = admin_approve_reject_keyboard(user_id, plan)
 
 		caption = f"🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\nID: {user_id}"
 
@@ -441,7 +467,7 @@ def handle_any(message):
 				caption + "\n\n❗ Неизвестный тип файла"
 			)
 
-		send_temp_message(user_id,"⏳ Файл получен, ожидайте проверки", 30)
+		send_temp_message(bot, user_id,"⏳ Файл получен, ожидайте проверки", 30)
 
 	except Exception as e:
 		logger.error(f"Ошибка: {e}")
@@ -454,6 +480,13 @@ def handle_any(message):
 def callback(call):
 	try:
 		data = call.data
+		# -------------------------
+		# BUY MENU
+		# -------------------------
+		if data == "menu":
+			show_menu(call)
+			return
+		
 		# -------------------------
 		# BUY MENU
 		# -------------------------
@@ -479,7 +512,7 @@ def callback(call):
 		# HELP
 		# -------------------------
 		if data == "help":
-			show_help()
+			show_help(call)
 			return
 
 		# -------------------------
@@ -492,7 +525,7 @@ def callback(call):
 		# -------------------------
 		# APPROVE
 		# -------------------------
-		if data.startswith("approve:"):
+		if data.startswith("approve"):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])
 								
@@ -510,7 +543,7 @@ def callback(call):
 					try:
 						buffer = qrcode_generate(vless_url)
 						send_temp_photo(bot, user_id, buffer, 60)
-						send_temp_message(bot, user_id, f"```\n{vless_url}\n```", 60, parse_mode="Markdown" )
+						send_temp_message(bot, user_id, f"<code>{vless_url}</code>", 60, parse_mode="HTML" )
 					except Exception as e:
 						logger.error(f"Ошибка генерации QR-кода: {e}")
 					
@@ -547,7 +580,7 @@ def callback(call):
 		# -------------------------
 		# REJECT
 		# -------------------------
-		if data.startswith("reject:"):
+		if data.startswith("reject"):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])			
 			try:
