@@ -206,7 +206,7 @@ class Database:
 				paid_days = 0
 				bot.send_message(user_id, "⚠️ Ваша подписка истекла.\nЧтобы не видеть это сообщение заблокируйте и удалите бота")
 				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (0, user_id))
-				delete_users_link(str(user_id))
+				delete_users_link(user_id)
 			else:
 				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (paid_days, user_id))
 
@@ -548,7 +548,7 @@ def callback(call):
 			else:
 				# Генерация ссылки
 				try:
-					if not check_user(str(user_id)):
+					if not check_user(user_id):
 						vless_url = create_user(user_id)
 					else:
 						vless_url = get_users_link(user_id)

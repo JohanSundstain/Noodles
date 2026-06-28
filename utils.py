@@ -5,10 +5,11 @@ import qrcode
 from io import BytesIO
 
 def create_user(user_id):
+	user_id_str = str(user_id)
 	# Передаем ввод через параметр input
 	result = subprocess.run(
 		['newuser'],  # или ['/path/to/program']
-		input=f'{user_id}\n',
+		input= user_id_str +'\n',
 		capture_output=True,
 		text=True,
 		encoding='utf-8'
@@ -20,36 +21,36 @@ def create_user(user_id):
 
 
 def get_user_list():
-	process = subprocess.Popen(
-		['rmuser'],
-		stdin=subprocess.PIPE,
-		stdout=subprocess.PIPE,
-		stderr=subprocess.PIPE,
+	result = subprocess.run(
+		['userlist'],
+		input="",
+		capture_output=True,
 		text=True,
 		encoding='utf-8'
 	)
-	
-	stdout, _ = process.communicate()
-	
-	users = re.findall(r'\d+\.\s+(\w+)', stdout)
+
+	users = re.findall(r'\d+\.\s+(\w+)', result.stdout)
 	return users
 
 def check_user(user_id):
+	user_id_str = str(user_id)
 	users = get_user_list()
 
-	return user_id in users
+	return user_id_str in users
 
 
 def delete_users_link(user_id):
 	"""Удаляет пользователя по имени"""
+
+	user_id_str = str(user_id)
 	users = get_user_list()
 	
-	if user_id not in users:
-		print(f"Пользователь {user_id} не найден")
+	if user_id_str not in users:
+		print(f"Пользователь {user_id_str} не найден")
 		return
 	
 	# Находим номер пользователя
-	user_number = users.index(user_id) + 1
+	user_number = users.index(user_id_str) + 1
 	
 	# Запускаем rmuser и отправляем номер
 	process = subprocess.Popen(
@@ -64,14 +65,16 @@ def delete_users_link(user_id):
 	stdout, stderr = process.communicate(f"{user_number}\n")
 
 
-def get_users_link(username):
+def get_users_link(user_id):
+	user_id_str = str(user_id)
+
 	users = get_user_list()
 
-	if username not in users:
-		print(f"Пользователь {username} не найден")
+	if user_id_str not in users:
+		print(f"Пользователь {user_id_str} не найден")
 		return
 	
-	user_number = users.index(username) + 1
+	user_number = users.index(user_id_str) + 1
 
 	process = subprocess.Popen(
 		['sharelink'],
@@ -88,6 +91,7 @@ def get_users_link(username):
 	if url:
 		return url.group()
 	
+
 def qrcode_generate(url):
 	img = qrcode.make(url)
 	buffer = BytesIO()
@@ -99,4 +103,8 @@ def qrcode_generate(url):
 
 def temp_link_deleter(user_id):
 	time.sleep(3600)
-	delete_user_by_name(user_id)
+	delete_users_link(user_id)
+
+
+if __name__ == "__main__":
+	print(get_users_link())
