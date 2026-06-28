@@ -537,7 +537,7 @@ def callback(call):
 			user_id = int(data.split(":")[1])
 			plan = int(data.split(":")[2])
 
-			is_update = True if db.get_paid_days() > 0 else False
+			is_update = True if db.get_paid_days(user_id) > 0 else False
 
 			db.create_subscription(user_id, DAYS[plan])
 
