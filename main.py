@@ -623,7 +623,7 @@ def callback(call):
 		if data == "link":
 			user_id = call.from_user.id
 			vless_url = get_users_link(user_id)
-			message = f"<code>{}</code>"
+			message = f"<code>{vless_url}</code>"
 			send_temp_message(bot, user_id, message, 30, parse_mode="HTML")
 			send_temp_message(bot, user_id, "Сообщение исчезнет через 30 сек.", 30, parse_mode="HTML")
 			bot.answer_callback_query(call.id)
