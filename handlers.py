@@ -147,7 +147,7 @@ def show_approved(call):
             logger.warning(f'Не удалось отредактировать сообщение администратора: {e}')
 
     bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
-    send_temp_message(bot, user_id, 'Сообщение исчезнет через 30 сек.\nПовторно получить ссылку: <code>Меню</code> -> <code>Статус</code>', 30, parse_mode='HTML')
+    send_temp_message(bot, user_id, 'Сообщение исчезнет через 120 сек.\nПовторно получить ссылку: <code>Меню</code> -> <code>Статус</code>', 120, parse_mode='HTML')
     bot.answer_callback_query(call.id)
 
 
@@ -170,10 +170,11 @@ def show_reject(call):
 def show_temp_link(call):
     plan = int(call.data.split(':')[1])
     code = generate_secure_code(5)
-    user_id = int(generate_secure_code(7))
+    user_id = int(generate_secure_code(8))
     temp_links[code] = (user_id, plan)
     vless_url = create_user(user_id)
-    send_qr_and_link(user_id, vless_url)
+    
+    send_qr_and_link(ADMIN_ID, vless_url)
     schedule_user_deletion(user_id, 60)
     bot.answer_callback_query(call.id)
 
