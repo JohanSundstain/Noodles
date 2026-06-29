@@ -9,16 +9,18 @@ import sys
 from telebot import types
 from contextlib import contextmanager
 
-# Настройка логирования
-logging.basicConfig(
-	level=logging.INFO,
-	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-	handlers=[
-		logging.FileHandler('bot.log'),
-		logging.StreamHandler(sys.stdout)
-	]
-)
-logger = logging.getLogger(__name__)
+try:
+	from utils import delete_users_link, send_temp_message, logger
+except ImportError as e:
+	logger.error(f"Ошибка импорта utils: {e}")
+	sys.exit(1)
+
+try:
+	from config import BONUS
+except ImportError as e:
+	logger.error(f"Ошибка импорта config: {e}")
+	sys.exit(1)
+
 
 
 class Database:

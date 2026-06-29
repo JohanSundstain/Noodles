@@ -15,15 +15,14 @@ try:
 	from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, NUMBER, BONUS, DAYS, BOT_LINK
 except ImportError as e:
 	logger.error(f"Ошибка импорта config: {e}")
-	logger.error("Создайте файл config.py со следующими переменными:")
-	logger.error("TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER")
 	sys.exit(1)
 
 try:
-	from utils import create_user, delete_users_link, get_users_link, qrcode_generate, check_user, generate_secure_code
+	from utils import create_user, delete_users_link, \
+		get_users_link, qrcode_generate, generate_secure_code, \
+		temp_link_deleter, send_temp_photo, send_temp_message, logger
 except ImportError as e:
 	logger.error(f"Ошибка импорта utils: {e}")
-	logger.error("Убедитесь, что файл utils.py существует и содержит функции create_user и delete_user_by_name")
 	sys.exit(1)
 
 # Инициализация бота с обработкой ошибок
@@ -34,10 +33,6 @@ try:
 except Exception as e:
 	logger.error(f"Ошибка инициализации бота: {e}")
 	sys.exit(1)
-
-# -------------------------
-# SQLITE INIT С ОТКАЗОУСТОЙЧИВОСТЬЮ
-# -------------------------
 
 # Создание экземпляра БД
 try:
@@ -526,45 +521,8 @@ def callback(call):
 	except Exception as e:
 		logger.error(f"Ошибка в callback: {e}")
 
-def send_temp_message(bot, chat_id, text, seconds=30, **kwargs):
-	try:
-		msg = bot.send_message(chat_id, text, **kwargs)
 
-		def delete():
-			try:
-				bot.delete_message(chat_id, msg.message_id)
-			except Exception as e:
-				logger.error(f"Ошибка удаления сообщения: {e}")
 
-		threading.Timer(seconds, delete).start()
-	except Exception as e:
-		logger.error(f"Ошибка при отправке временного сообщения: {e}")
-
-def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
-	try:
-		msg = bot.send_photo(chat_id, buffer, **kwargs)
-
-		def delete():
-			try:
-				bot.delete_message(chat_id, msg.message_id)
-			except Exception as e:
-				logger.error(f"Ошибка удаления сообщения: {e}")
-
-		threading.Timer(seconds, delete).start()
-	except Exception as e:
-		logger.error(f"Ошибка при отправке временного изображения: {e}")
-
-def temp_link_deleter(temp_id, seconds=3600):
-	try:
-		def delete():
-			try:
-				delete_users_link(temp_id)
-			except Exception as e:
-				logger.error(f"Ошибка удаления сообщения: {e}")
-
-		threading.Timer(seconds, delete).start()
-	except Exception as e:
-		logger.error(f"Ошибка при удалении временной ссылки: {e}")
 
 def run_schedule():
 	while True:
