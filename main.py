@@ -9,16 +9,7 @@ import sys
 from telebot import types
 from contextlib import contextmanager
 
-# Настройка логирования
-logging.basicConfig(
-	level=logging.INFO,
-	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-	handlers=[
-		logging.FileHandler('bot.log'),
-		logging.StreamHandler(sys.stdout)
-	]
-)
-logger = logging.getLogger(__name__)
+from database import Database, logger
 
 try:
 	from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, NUMBER, BONUS, DAYS, BOT_LINK
@@ -28,11 +19,6 @@ except ImportError as e:
 	logger.error("TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER")
 	sys.exit(1)
 
-try:
-	from database import Database
-except ImportError as e:
-	logger.error(f"Ошибка импорта database: {e}")
-	sys.exit(1)
 
 try:
 	from utils import create_user, delete_users_link, get_users_link, qrcode_generate, check_user, generate_secure_code
