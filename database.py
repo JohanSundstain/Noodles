@@ -9,19 +9,9 @@ import sys
 from telebot import types
 from contextlib import contextmanager
 
-try:
-	from utils import delete_users_link, send_temp_message, logger
-except ImportError as e:
-	logger.error(f"Ошибка импорта utils: {e}")
-	sys.exit(1)
-
-try:
-	from config import BONUS
-except ImportError as e:
-	logger.error(f"Ошибка импорта config: {e}")
-	sys.exit(1)
-
-
+from bot import bot
+from utils import delete_users_link, send_temp_message, logger
+from config import BONUS
 
 class Database:
 	def __init__(self, db_path="bot.db"):

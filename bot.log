@@ -1,0 +1,61 @@
+2026-06-29 14:23:04,097 - utils - INFO - Бот успешно инициализирован
+2026-06-29 14:23:04,097 - utils - INFO - Подключение к БД bot.db установлено
+2026-06-29 14:23:04,107 - utils - INFO - Таблицы БД инициализированы
+2026-06-29 14:23:04,107 - utils - INFO - Запуск бота...
+2026-06-29 14:23:04,107 - utils - INFO - Фоновый процесс запущен
+2026-06-29 14:23:07,360 - TeleBot - ERROR - Infinity polling: polling exited
+2026-06-29 14:23:07,360 - TeleBot - ERROR - Break infinity polling
+2026-06-29 14:23:07,360 - utils - INFO - Соединение с БД закрыто
+2026-06-29 14:23:07,360 - utils - INFO - Ресурсы освобождены
+2026-06-29 14:28:05,067 - utils - INFO - Бот успешно инициализирован
+2026-06-29 14:28:09,943 - utils - INFO - Бот успешно инициализирован
+2026-06-29 14:28:09,944 - utils - INFO - Подключение к БД bot.db установлено
+2026-06-29 14:28:09,945 - utils - INFO - Таблицы БД инициализированы
+2026-06-29 14:28:09,945 - utils - INFO - Запуск бота...
+2026-06-29 14:28:09,945 - utils - INFO - Фоновый процесс запущен
+2026-06-29 14:28:14,773 - TeleBot - ERROR - Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-06-29 14:28:14,775 - TeleBot - ERROR - Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1260, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 690, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 662, in get_updates
+    json_updates = apihelper.get_updates(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-06-29 14:28:18,870 - TeleBot - ERROR - Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-06-29 14:28:18,870 - TeleBot - ERROR - Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1260, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 690, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 662, in get_updates
+    json_updates = apihelper.get_updates(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+
+2026-06-29 14:28:22,381 - TeleBot - ERROR - Infinity polling: polling exited
+2026-06-29 14:28:22,381 - TeleBot - ERROR - Break infinity polling
+2026-06-29 14:28:22,381 - utils - INFO - Соединение с БД закрыто
+2026-06-29 14:28:22,381 - utils - INFO - Ресурсы освобождены

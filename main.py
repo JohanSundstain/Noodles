@@ -9,30 +9,14 @@ import sys
 from telebot import types
 from contextlib import contextmanager
 
-from database import Database, logger
 
-try:
-	from config import TOKEN, ADMIN_ID, OWNER_ID, PRICES, NUMBER, BONUS, DAYS, BOT_LINK
-except ImportError as e:
-	logger.error(f"Ошибка импорта config: {e}")
-	sys.exit(1)
-
-try:
-	from utils import create_user, delete_users_link, \
+from utils import create_user, delete_users_link, \
 		get_users_link, qrcode_generate, generate_secure_code, \
 		temp_link_deleter, send_temp_photo, send_temp_message, logger
-except ImportError as e:
-	logger.error(f"Ошибка импорта utils: {e}")
-	sys.exit(1)
 
-# Инициализация бота с обработкой ошибок
-try:
-	bot = telebot.TeleBot(TOKEN)
-	bot.get_me()  # Проверка токена
-	logger.info("Бот успешно инициализирован")
-except Exception as e:
-	logger.error(f"Ошибка инициализации бота: {e}")
-	sys.exit(1)
+from database import Database
+from config import ADMIN_ID, OWNER_ID, PRICES, NUMBER, DAYS, BOT_LINK
+from bot import bot
 
 # Создание экземпляра БД
 try:
