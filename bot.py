@@ -1,16 +1,13 @@
-import telebot
 import sys
-from telebot import types
-from contextlib import contextmanager
+from telebot import TeleBot
 
-from utils import logger
 from config import TOKEN
+from logger import logger
 
-# Инициализация бота с обработкой ошибок
 try:
-	bot = telebot.TeleBot(TOKEN)
-	bot.get_me()  # Проверка токена
-	logger.info("Бот успешно инициализирован")
+    bot = TeleBot(TOKEN)
+    bot.get_me()
+    logger.info('Бот успешно инициализирован')
 except Exception as e:
-	logger.error(f"Ошибка инициализации бота: {e}")
-	sys.exit(1)
+    logger.error(f'Ошибка инициализации бота: {e}')
+    sys.exit(1)

@@ -1,17 +1,11 @@
-import telebot
-import random
-import schedule
-import time
-import threading
 import sqlite3
-import logging
-import sys
-from telebot import types
 from contextlib import contextmanager
 
 from bot import bot
-from utils import delete_users_link, send_temp_message, logger
 from config import BONUS
+from logger import logger
+from telegram_helpers import send_temp_message
+from xray import delete_users_link
 
 class Database:
 	def __init__(self, db_path="bot.db"):
