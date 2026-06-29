@@ -19,7 +19,6 @@ except ImportError as e:
 	logger.error("TOKEN, ADMIN_ID, OWNER_ID, PRICES, RESONS, NUMBER")
 	sys.exit(1)
 
-
 try:
 	from utils import create_user, delete_users_link, get_users_link, qrcode_generate, check_user, generate_secure_code
 except ImportError as e:
