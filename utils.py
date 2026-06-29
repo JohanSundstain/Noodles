@@ -7,18 +7,22 @@ from io import BytesIO
 
 def create_user(user_id):
 	user_id_str = str(user_id)
-	# Передаем ввод через параметр input
-	result = subprocess.run(
-		['newuser'],  # или ['/path/to/program']
-		input= user_id_str +'\n',
-		capture_output=True,
-		text=True,
-		encoding='utf-8'
-	)
 
-	url = re.search(r'vless://[^\s]+', result.stdout)
-	if url:
-		return url.group()
+	if check_user(user_id):
+		return get_users_link(user_id)
+	else:
+		# Передаем ввод через параметр input
+		result = subprocess.run(
+			['newuser'],  # или ['/path/to/program']
+			input= user_id_str +'\n',
+			capture_output=True,
+			text=True,
+			encoding='utf-8'
+		)
+
+		url = re.search(r'vless://[^\s]+', result.stdout)
+		if url:
+			return url.group()
 
 
 def get_user_list():
