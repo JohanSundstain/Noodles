@@ -171,12 +171,12 @@ def show_temp_link(call):
     plan = int(call.data.split(':')[1])
     code = generate_secure_code(5)
     user_id = int(generate_secure_code(8))
-    temp_code_deleter(dict=temp_links, key=code, value=(user_id, plan), seconds=120)
+    temp_code_deleter(dict=temp_links, key=code, value=(user_id, plan))
     vless_url = create_user(user_id)
     
     send_qr_and_link(ADMIN_ID, vless_url)
     send_temp_message(bot, ADMIN_ID, f"Код пользователя: <code>{code}</code>", 120, parse_mode="HTML")
-    schedule_user_deletion(user_id, 120)
+    schedule_user_deletion(user_id)
     
     bot.answer_callback_query(call.id)
 
