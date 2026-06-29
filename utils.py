@@ -1,4 +1,5 @@
 import subprocess
+import secrets
 import time
 import re
 import qrcode
@@ -106,5 +107,5 @@ def temp_link_deleter(user_id):
 	delete_users_link(user_id)
 
 
-if __name__ == "__main__":
-	print(get_users_link())
+def generate_secure_code(n):
+    return ''.join(secrets.choice('0123456789') for _ in range(n))

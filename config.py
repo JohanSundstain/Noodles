@@ -1,4 +1,4 @@
-from secrets import token, admin_id, owner_id, number
+from local_secrets import token, admin_id, owner_id, number
 
 TOKEN = token
 ADMIN_ID = admin_id
