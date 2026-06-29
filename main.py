@@ -1,14 +1,9 @@
-import telebot
-import random
 import schedule
 import time
 import threading
-import sqlite3
-import logging
 import sys
 from telebot import types
 from contextlib import contextmanager
-
 
 from utils import create_user, delete_users_link, \
 		get_users_link, qrcode_generate, generate_secure_code, \
@@ -504,8 +499,6 @@ def callback(call):
 
 	except Exception as e:
 		logger.error(f"Ошибка в callback: {e}")
-
-
 
 
 def run_schedule():
