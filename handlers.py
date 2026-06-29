@@ -91,7 +91,7 @@ def show_help(call):
         '<b>🍏 iPhone (iOS)</b>\n'
         '<code>v2ray</code>\n\n'
         '<b>🖥 Windows</b>\n'
-        'https://github.com/2dust/v2rayNG/releases\n\n'
+        'https://github.com/2dust/v2rayN/releases (v2rayN-windows-64-desktop.zip)\n\n'
         '2️⃣ Откройте приложение.\n\n'
         '3️⃣ Импортируйте полученную ссылку или отсканируйте QR-код.\n\n'
         '<b>❓ Возникли вопросы?</b>\n\n'
