@@ -18,6 +18,7 @@ from telegram_helpers import (
     generate_secure_code,
     send_temp_photo,
     send_temp_message,
+    temp_code_deleter
 )
 from xray import create_user, get_users_link, schedule_user_deletion, delete_users_link
 
@@ -29,7 +30,6 @@ except Exception as e:
 
 user_plan = {}
 temp_links = {}
-
 
 def show_menu(call):
     user_id = call.from_user.id
@@ -171,12 +171,13 @@ def show_temp_link(call):
     plan = int(call.data.split(':')[1])
     code = generate_secure_code(5)
     user_id = int(generate_secure_code(8))
-    temp_links[code] = (user_id, plan)
+    temp_code_deleter(dict=temp_links, key=code, value=(user_id, plan), seconds=120)
     vless_url = create_user(user_id)
     
     send_qr_and_link(ADMIN_ID, vless_url)
     send_temp_message(bot, ADMIN_ID, f"Код пользователя: <code>{code}</code>", 120, parse_mode="HTML")
     schedule_user_deletion(user_id, 120)
+    
     bot.answer_callback_query(call.id)
 
 
