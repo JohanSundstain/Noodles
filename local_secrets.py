@@ -1,4 +1,0 @@
-token = "8894329966:AAG5hNJIViSsE7dLMBQ9wh4vm1jnfvM911E"
-admin_id = 673164195
-owner_id = 673164195
-number = 79622641341
