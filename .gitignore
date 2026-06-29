@@ -1,2 +1,3 @@
 local_secrets.py
+*.db
 *.log
