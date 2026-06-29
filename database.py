@@ -165,7 +165,9 @@ class Database:
 			if paid_days <= 0:
 				paid_days = 0
 				bot.send_message(user_id, "⚠️ Ваша подписка истекла.\nЧтобы не видеть это сообщение заблокируйте и удалите бота")
+				logger.info(f"Юзер {user_id} кончились дни")
 				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (0, user_id))
 				delete_users_link(user_id)
 			else:
+				logger.info(f"Юзер {user_id} уменьшено дней {paid_days}")
 				self.execute("UPDATE users SET paid_days=?  WHERE user_id=?", (paid_days, user_id))
