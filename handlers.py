@@ -175,7 +175,8 @@ def show_temp_link(call):
     vless_url = create_user(user_id)
     
     send_qr_and_link(ADMIN_ID, vless_url)
-    schedule_user_deletion(user_id, 60)
+    send_temp_message(bot, ADMIN_ID, f"Код пользователя: <code>{code}</code>", 120, parse_mode="HTML")
+    schedule_user_deletion(user_id, 120)
     bot.answer_callback_query(call.id)
 
 
