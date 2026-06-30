@@ -1,5 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
+from pathlib import Path
 
 from bot import bot
 from config import BONUS
@@ -9,23 +10,26 @@ from xray import delete_users_link
 
 class Database:
 	def __init__(self, db_path="bot.db"):
-		self.db_path = db_path
-		self.connection = None
-		self._connect()
+		base_dir = Path(__file__).resolve().parent
+		db_file = Path(db_path)
+		if not db_file.is_absolute():
+			db_file = base_dir / db_file
+		self.db_path = str(db_file)
 		self._init_tables()
 
 	def _connect(self):
-		"""Создание подключения с обработкой ошибок"""
+		"""Создание нового подключения для каждой операции"""
 		try:
-			if self.connection:
-				self.connection.close()
-			self.connection = sqlite3.connect(
-				self.db_path,
+			db_file = Path(self.db_path)
+			db_file.parent.mkdir(parents=True, exist_ok=True)
+			connection = sqlite3.connect(
+				str(db_file),
 				check_same_thread=False,
 				timeout=30  # Таймаут на случай блокировки
 			)
-			self.connection.row_factory = sqlite3.Row
+			connection.row_factory = sqlite3.Row
 			logger.info(f"Подключение к БД {self.db_path} установлено")
+			return connection
 		except sqlite3.Error as e:
 			logger.error(f"Ошибка подключения к БД: {e}")
 			raise
@@ -33,14 +37,15 @@ class Database:
 	def _init_tables(self):
 		"""Инициализация таблиц с проверкой"""
 		try:
-			with self.connection:
-				self.connection.execute("""
+			with sqlite3.connect(self.db_path, check_same_thread=False, timeout=30) as connection:
+				connection.row_factory = sqlite3.Row
+				connection.execute("""
 					CREATE TABLE IF NOT EXISTS users (
 						user_id INTEGER PRIMARY KEY,
 						paid_days INTEGER DEFAULT 0)
 				""")
 			
-				self.connection.execute("""
+				connection.execute("""
 					CREATE TABLE IF NOT EXISTS referrals (
 						user_id INTEGER PRIMARY KEY,
 						inviter INTEGER,
@@ -54,16 +59,20 @@ class Database:
 
 	@contextmanager
 	def cursor(self):
-		"""Контекстный менеджер для курсоров с автоматическим закрытием"""
-		cursor = self.connection.cursor()
+		"""Контекстный менеджер для курсоров с отдельным соединением на каждую операцию"""
+		connection = sqlite3.connect(self.db_path, check_same_thread=False, timeout=30)
+		connection.row_factory = sqlite3.Row
+		cursor = connection.cursor()
 		try:
 			yield cursor
+			connection.commit()
 		except sqlite3.Error as e:
 			logger.error(f"Ошибка SQL: {e}")
-			self.connection.rollback()
+			connection.rollback()
 			raise
 		finally:
 			cursor.close()
+			connection.close()
 
 	def execute(self, query, params=None):
 		"""Выполнение запроса с автоматическим коммитом"""
@@ -73,11 +82,9 @@ class Database:
 					cur.execute(query, params)
 				else:
 					cur.execute(query)
-				self.connection.commit()
 				return cur
 		except sqlite3.Error as e:
 			logger.error(f"Ошибка выполнения запроса: {query}, params={params}, error={e}")
-			self.connection.rollback()
 			raise
 
 	def fetch_one(self, query, params=None):
@@ -107,10 +114,8 @@ class Database:
 			return []
 
 	def close(self):
-		"""Закрытие соединения"""
-		if self.connection:
-			self.connection.close()
-			logger.info("Соединение с БД закрыто")
+		"""Оставлено для совместимости, теперь соединения закрываются сразу после операции"""
+		pass
 
 	
 	def check_user(self, user_id):
