@@ -2,7 +2,18 @@ import threading
 from io import BytesIO
 import qrcode
 from logger import logger
+from datetime import datetime, timezone, time
 
+from config import ADMIN_ID
+
+
+def is_work_time():
+    now = datetime.now(timezone.utc).time()
+
+    start = time(3, 0)
+    end = time(19, 0)
+
+    return now >= start or now < end
 
 def qrcode_generate(url):
 	img = qrcode.make(url)
@@ -11,6 +22,8 @@ def qrcode_generate(url):
 	buffer.seek(0)
 	return buffer
 
+def is_admin(user_id):
+	return user_id == ADMIN_ID 
 
 def generate_secure_code(n):
 	return ''.join(__import__('secrets').choice('0123456789') for _ in range(n))
@@ -21,7 +34,6 @@ def _schedule_delete(callback, seconds):
 	timer.daemon = True
 	timer.start()
 	return timer
-
 
 def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
 	try:

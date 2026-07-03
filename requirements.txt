@@ -2,3 +2,5 @@ pyTelegramBotAPI
 qrcode
 Pillow
 schedule
+SQLAlchemy>=2.0
+psycopg2-binary

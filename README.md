@@ -57,3 +57,21 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m Noodles.main
 ```
+
+## PostgreSQL и SQLAlchemy
+
+Если вы хотите использовать PostgreSQL вместо SQLite, установите переменную окружения `DATABASE_URL`.
+
+Пример:
+
+```bash
+export DATABASE_URL="postgresql://user:password@localhost:5432/noodles"
+```
+
+Запустите миграцию данных из SQLite:
+
+```bash
+python migrate.py bot.db
+```
+
+Если `DATABASE_URL` не задана, приложение продолжит использовать SQLite `bot.db`.

@@ -1,216 +1,142 @@
-import sqlite3
 from contextlib import contextmanager
-from pathlib import Path
 
 from bot import bot
-from config import BONUS
+from config import BONUS, DATABASE_URL
 from logger import logger
 from telegram_helpers import send_temp_message
 from xray import delete_users_link
+from sqlalchemy import Boolean, Column, Integer, create_engine, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+
+Base = declarative_base()
+
+
+class User(Base):
+    __tablename__ = 'users'
+
+    user_id = Column(Integer, primary_key=True, autoincrement=False)
+    paid_days = Column(Integer, default=0, nullable=False)
+    referral = relationship('Referral', back_populates='user', uselist=False, cascade='all, delete-orphan')
+
+
+class Referral(Base):
+    __tablename__ = 'referrals'
+
+    user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    inviter = Column(Integer, nullable=True)
+    reward_given = Column(Boolean, default=False, nullable=False)
+    user = relationship('User', back_populates='referral')
 
 
 class Database:
-    def __init__(self, db_path="bot.db"):
-        base_dir = Path(__file__).resolve().parent
-        db_file = Path(db_path)
+    def __init__(self, db_url=None):
+        self.db_url = db_url or DATABASE_URL
 
-        if not db_file.is_absolute():
-            db_file = base_dir / db_file
+        connect_args = {}
+        if self.db_url.startswith('sqlite'):
+            connect_args = {'check_same_thread': False}
 
-        self.db_path = str(db_file)
-
-        # создаём папку под БД (если нет)
-        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+        self.engine = create_engine(self.db_url, connect_args=connect_args, future=True)
+        self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False, future=True)
 
         self._init_tables()
-        self._enable_wal()
 
     # ----------------------------
     # CORE CONNECTION
     # ----------------------------
     @contextmanager
-    def connect(self):
-        conn = sqlite3.connect(
-            self.db_path,
-            timeout=30,
-            check_same_thread=False
-        )
-        conn.row_factory = sqlite3.Row
+    def session_scope(self):
+        session = self.SessionLocal()
         try:
-            yield conn
-            conn.commit()
+            yield session
+            session.commit()
         except Exception as e:
-            conn.rollback()
-            logger.error(f"DB transaction error: {e}")
+            session.rollback()
+            logger.error(f'DB transaction error: {e}')
             raise
         finally:
-            conn.close()
+            session.close()
 
     # ----------------------------
     # INIT
     # ----------------------------
     def _init_tables(self):
         try:
-            with self.connect() as conn:
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        user_id INTEGER PRIMARY KEY,
-                        paid_days INTEGER DEFAULT 0
-                    )
-                """)
-
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS referrals (
-                        user_id INTEGER PRIMARY KEY,
-                        inviter INTEGER,
-                        reward_given BOOLEAN DEFAULT FALSE
-                    )
-                """)
-
-            logger.info("SQLite tables initialized")
-
+            Base.metadata.create_all(self.engine)
+            logger.info('Database tables initialized')
         except Exception as e:
-            logger.error(f"DB init error: {e}")
+            logger.error(f'DB init error: {e}')
             raise
-
-    def _enable_wal(self):
-        """Сильно уменьшает lock'и и повышает стабильность под нагрузкой"""
-        try:
-            with self.connect() as conn:
-                conn.execute("PRAGMA journal_mode=WAL;")
-                conn.execute("PRAGMA synchronous=NORMAL;")
-        except Exception as e:
-            logger.warning(f"WAL enable failed: {e}")
-
-    # ----------------------------
-    # LOW LEVEL API
-    # ----------------------------
-    def execute(self, query, params=None):
-        with self.connect() as conn:
-            cur = conn.execute(query, params or ())
-            return cur
-
-    def fetch_one(self, query, params=None):
-        with self.connect() as conn:
-            cur = conn.execute(query, params or ())
-            return cur.fetchone()
-
-    def fetch_all(self, query, params=None):
-        with self.connect() as conn:
-            cur = conn.execute(query, params or ())
-            return cur.fetchall()
 
     # ----------------------------
     # LOGIC
     # ----------------------------
     def check_user(self, user_id):
-        row = self.fetch_one(
-            "SELECT 1 FROM users WHERE user_id=?",
-            (user_id,)
-        )
-        return row is not None
+        with self.session_scope() as session:
+            return session.get(User, user_id) is not None
 
     def create_new_user(self, user_id, ref=None):
-        if self.check_user(user_id):
-            return
+        with self.session_scope() as session:
+            if session.get(User, user_id):
+                return
 
-        self.execute(
-            "INSERT INTO users (user_id) VALUES (?)",
-            (user_id,)
-        )
+            if ref is not None and session.get(User, ref) is None:
+                ref = None
 
-        if ref is not None and not self.check_user(ref):
-            ref = None
-
-        if ref is not None:
-            self.execute(
-                "INSERT INTO referrals (user_id, inviter) VALUES (?, ?)",
-                (user_id, ref)
-            )
-        else:
-            self.execute(
-                "INSERT INTO referrals (user_id) VALUES (?)",
-                (user_id,)
-            )
+            session.add(User(user_id=user_id))
+            session.add(Referral(user_id=user_id, inviter=ref))
 
     def create_subscription(self, user_id, days):
-        if not self.check_user(user_id):
-            return
+        with self.session_scope() as session:
+            user = session.get(User, user_id)
+            if not user:
+                return
 
-        self.execute(
-            "UPDATE users SET paid_days = paid_days + ? WHERE user_id=?",
-            (days, user_id)
-        )
+            user.paid_days = (user.paid_days or 0) + days
 
-        row = self.fetch_one(
-            "SELECT inviter, reward_given FROM referrals WHERE user_id=?",
-            (user_id,)
-        )
-
-        if not row:
-            return
-
-        inviter, reward_given = row
-
-        if inviter and not reward_given and days > 1:
-            try:
-                send_temp_message(
-                    bot,
-                    inviter,
-                    f"✅ Бонус {BONUS} дней за инвайт получен!",
-                    120
-                )
-
-                self.execute(
-                    "UPDATE users SET paid_days = paid_days + ? WHERE user_id=?",
-                    (BONUS, inviter)
-                )
-
-                self.execute(
-                    "UPDATE referrals SET reward_given=1 WHERE user_id=?",
-                    (user_id,)
-                )
-
-            except Exception as e:
-                logger.error(f"Referral bonus error: {e}")
+            referral = session.get(Referral, user_id)
+            if referral and referral.inviter and not referral.reward_given and days > 1:
+                try:
+                    inviter = session.get(User, referral.inviter)
+                    if inviter:
+                        send_temp_message(
+                            bot,
+                            inviter,
+                            f'✅ Бонус {BONUS} дней за инвайт получен!',
+                            120
+                        )
+                        inviter.paid_days = (inviter.paid_days or 0) + BONUS
+                        referral.reward_given = True
+                except Exception as e:
+                    logger.error(f'Referral bonus error: {e}')
 
     def get_paid_days(self, user_id):
-        row = self.fetch_one(
-            "SELECT paid_days FROM users WHERE user_id=?",
-            (user_id,)
-        )
-        return row["paid_days"] if row else 0
+        with self.session_scope() as session:
+            user = session.get(User, user_id)
+            return user.paid_days if user else 0
 
     def reduce_days(self):
-        users = self.fetch_all(
-            "SELECT user_id, paid_days FROM users"
-        )
+        with self.session_scope() as session:
+            users = session.query(User).all()
 
-        for row in users:
-            user_id = row["user_id"]
-            paid_days = row["paid_days"] - 1
+            for user in users:
+                paid_days = (user.paid_days or 0) - 1
 
-            if paid_days <= 0:
-                paid_days = 0
+                if paid_days <= 0:
+                    user.paid_days = 0
+                    try:
+                        bot.send_message(
+                            user.user_id,
+                            '⚠️ Ваша подписка истекла.\nУдалите бота если не хотите получать уведомления.'
+                        )
+                    except Exception as e:
+                        logger.warning(f'Не удалось уведомить пользователя {user.user_id}: {e}')
 
-                bot.send_message(
-                    user_id,
-                    "⚠️ Ваша подписка истекла.\nУдалите бота если не хотите получать уведомления."
-                )
+                    logger.info(f'Subscription expired: {user.user_id}')
+                    delete_users_link(user.user_id)
+                else:
+                    user.paid_days = paid_days
+                    logger.info(f'User {user.user_id}: days left {paid_days}')
 
-                logger.info(f"Subscription expired: {user_id}")
-
-                self.execute(
-                    "UPDATE users SET paid_days=0 WHERE user_id=?",
-                    (user_id,)
-                )
-
-                delete_users_link(user_id)
-
-            else:
-                logger.info(f"User {user_id}: days left {paid_days}")
-
-                self.execute(
-                    "UPDATE users SET paid_days=? WHERE user_id=?",
-                    (paid_days, user_id)
-                )
+    def close(self):
+        self.engine.dispose()
