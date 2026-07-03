@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import re
 import subprocess
@@ -10,6 +10,8 @@ from logger import logger
 app = FastAPI()
 
 user_index_cache = Cache(ttl=120)
+
+
 # ------------------------
 # MODELS
 # ------------------------
@@ -25,8 +27,9 @@ class ScheduleRequest(BaseModel):
     user_id: int
     seconds: int = 3600
 
+
 # ------------------------
-# CORE LOGIC (ported)
+# CORE LOGIC
 # ------------------------
 def _to_str(user_id):
     return str(user_id)
@@ -35,82 +38,92 @@ def _to_str(user_id):
 def load_user_dict():
     result = subprocess.run(
         ['userlist'],
-        input='',
         capture_output=True,
         text=True,
-        encoding='utf-8'
+        encoding='utf-8',
+        timeout=10
     )
 
-    users_list = re.findall(r'\d+\.\s+(\w+)', result.stdout)
+    users_list = re.findall(r'\d+\.\s+(\w+)', result.stdout or "")
 
     users_dict = {}
-    for i in range(len(users_list)):
-        users_dict[users_list[i]] = i + 1
+    for i, uid in enumerate(users_list, start=1):
+        users_dict[uid] = i
 
     return users_dict
+
 
 def get_user_index(user_id):
     return user_index_cache.get(str(user_id), load_user_dict)
 
+
 def load_user_link(user_id):
-	user_id_str = _to_str(user_id)
+    user_id_str = _to_str(user_id)
 
-	user_index = user_index_cache.get(user_id_str, load_user_dict)
+    user_index = user_index_cache.get(user_id_str, load_user_dict)
 
-	if user_index is None:
-		logger.warning(f'Пользователь {user_id_str} не найден.')
-		return None
+    if not user_index:
+        logger.warning(f'User not found {user_id_str}')
+        return None
 
-	process = subprocess.Popen(
-		['sharelink'],
-		stdin=subprocess.PIPE,
-		stdout=subprocess.PIPE,
-		stderr=subprocess.PIPE,
-		text=True,
-		encoding='utf-8',
-	)
+    try:
+        process = subprocess.Popen(
+            ['sharelink'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8'
+        )
 
-	stdout, stderr = process.communicate(f'{user_index}\n')
-	url = re.search(r'vless://[^\s]+', stdout)
-	if url:
-		return url.group()
+        stdout, stderr = process.communicate(f'{user_index}\n', timeout=10)
 
-	logger.error(f'Не удалось получить ссылку пользователя {user_id}')
-	return None
+        url = re.search(r'vless://[^\s]+', stdout or "")
+
+        return url.group() if url else None
+
+    except Exception as e:
+        logger.error(f"sharelink error {user_id}: {e}")
+        return None
+
 
 # ------------------------
-# API ENDPOINTS
+# API
 # ------------------------
 
 @app.post("/user/create")
 def create_user(req: UserRequest):
-    user_id = req.user_id
+    try:
+        user_id = req.user_id
 
-    # уже существует
-    if user_index_cache.is_cached(str(user_id)):
+        # если уже есть — просто возвращаем ссылку
+        if user_index_cache.is_cached(str(user_id)):
+            link = load_user_link(user_id)
+            return {"status": "exists", "link": link}
+
+        result = subprocess.run(
+            ['newuser'],
+            input=str(user_id) + '\n',
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            timeout=10
+        )
+
+        url = re.search(r'vless://[^\s]+', result.stdout or "")
+
+        if not url:
+            logger.error(f"Failed to create user {user_id}: {result.stdout}")
+            raise HTTPException(status_code=500, detail="User creation failed")
+
         return {
-            "status": "exists",
-            "link": load_user_link(user_id)
+            "status": "ok",
+            "link": url.group()
         }
 
-    result = subprocess.run(
-        ['newuser'],
-        input=str(user_id) + '\n',
-        capture_output=True,
-        text=True,
-        encoding='utf-8',
-    )
-
-    url = re.search(r'vless://[^\s]+', result.stdout)
-
-    if not url:
-        logger.error(f"Не удалось создать пользователя {user_id}")
-        return {"status": "error"}
-
-    return {
-        "status": "ok",
-        "link": url.group()
-    }
+    except Exception as e:
+        logger.exception("create_user crashed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/user/{user_id}/exists")
@@ -124,29 +137,34 @@ def check_user(user_id: int):
 def get_link(user_id: int):
     user_index = get_user_index(user_id)
 
-    if user_index is None:
-        return {"status": "not_found"}
+    if not user_index:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    process = subprocess.Popen(
-        ['sharelink'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='utf-8',
-    )
+    try:
+        process = subprocess.Popen(
+            ['sharelink'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8'
+        )
 
-    stdout, _ = process.communicate(f'{user_index}\n')
+        stdout, _ = process.communicate(f'{user_index}\n', timeout=10)
 
-    url = re.search(r'vless://[^\s]+', stdout)
+        url = re.search(r'vless://[^\s]+', stdout or "")
 
-    if not url:
-        return {"status": "error"}
+        if not url:
+            raise HTTPException(status_code=500, detail="Link generation failed")
 
-    return {
-        "status": "ok",
-        "link": url.group()
-    }
+        return {
+            "status": "ok",
+            "link": url.group()
+        }
+
+    except Exception as e:
+        logger.exception("get_link failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.delete("/user")
@@ -155,38 +173,48 @@ def delete_user(req: DeleteRequest):
 
     user_index = get_user_index(user_id)
 
-    if user_index is None:
-        return {"status": "not_found"}
+    if not user_index:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    process = subprocess.Popen(
-        ['rmuser'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='utf-8',
-    )
+    try:
+        process = subprocess.Popen(
+            ['rmuser'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8'
+        )
 
-    stdout, stderr = process.communicate(f'{user_index}\n')
+        stdout, stderr = process.communicate(f'{user_index}\n', timeout=10)
 
-    if process.returncode != 0:
-        logger.warning(f"rmuser error {user_id}: {stderr}")
-        return {"status": "error"}
+        if process.returncode != 0:
+            logger.warning(f"rmuser error {user_id}: {stderr}")
+            raise HTTPException(status_code=500, detail="rmuser failed")
 
-    return {"status": "deleted"}
+        return {"status": "deleted"}
+
+    except Exception as e:
+        logger.exception("delete_user crashed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/user/schedule-delete")
 def schedule_delete(req: ScheduleRequest):
+
     def delete():
         try:
             user_index = get_user_index(req.user_id)
+
             if user_index:
-                subprocess.Popen(
+                subprocess.run(
                     ['rmuser'],
-                    stdin=subprocess.PIPE,
-                    text=True
-                ).communicate(f"{user_index}\n")
+                    input=f"{user_index}\n",
+                    text=True,
+                    capture_output=True,
+                    timeout=10
+                )
+
         except Exception as e:
             logger.error(f"scheduled delete error: {e}")
 
