@@ -51,7 +51,7 @@ def create_user(req: UserRequest):
             raise HTTPException(status_code=500, detail="User creation failed")
 
         # Принудительно очищаем кэш, чтобы при следующем запросе userlist обновился
-        user_index_cache.clear() 
+        user_index_cache.invalidate() 
         
         return {
             "status": "ok",
@@ -103,7 +103,7 @@ def delete_user(req: DeleteRequest):
         raise HTTPException(status_code=500, detail="rmuser failed")
 
     # Сбрасываем кэш после удаления, чтобы данные обновились
-    user_index_cache.clear()
+    user_index_cache.invalidate()
     return {"status": "deleted"}
 
 
@@ -115,7 +115,7 @@ def schedule_delete(req: ScheduleRequest):
             user_index = get_user_index(req.user_id)
             if user_index:
                 if remove_external_user(user_index):
-                    user_index_cache.clear()
+                    user_index_cache.invalidate()
         except Exception as e:
             logger.error(f"scheduled delete error: {e}")
 
