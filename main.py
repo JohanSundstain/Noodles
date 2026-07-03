@@ -1,18 +1,47 @@
+import os
+import secrets
 import threading
-from fastapi import FastAPI, HTTPException
+from config import API_KEY
+from fastapi import FastAPI, HTTPException, Security, status
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 
 from logger import logger
-# Импортируем все необходимые функции, включая get_user_index
 from xray import (
     get_user_index,
     create_external_user,
     load_user_link,
     remove_external_user,
-    user_index_cache  # Импортируем объект кэша для возможности его очистки
+    user_index_cache
 )
 
 app = FastAPI()
+
+# Глобальный лок для синхронизации создания/удаления пользователей
+write_lock = threading.Lock()
+
+# ------------------------
+# AUTHENTICATION CONFIG
+# ------------------------
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+def verify_api_key(api_key: str = Security(api_key_header)):
+    """Зависимость для проверки валидности API-ключа."""
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API Key is missing"
+        )
+    
+    # Безопасное сравнение строк против Timing Attack
+    if not secrets.compare_digest(api_key, API_KEY):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API Key"
+        )
+    return api_key
+
 
 # ------------------------
 # MODELS
@@ -31,43 +60,40 @@ class ScheduleRequest(BaseModel):
 
 
 # ------------------------
-# API
+# API (Защищенные эндпоинты)
 # ------------------------
 
 @app.post("/user/create")
-def create_user(req: UserRequest):
-    try:
-        user_id = req.user_id
+def create_user(req: UserRequest, _=Security(verify_api_key)):
+    user_id = req.user_id
 
-        # Если пользователь уже существует в системе — возвращаем его ссылку
-        if get_user_index(user_id):
-            link = load_user_link(user_id)
-            return {"status": "exists", "link": link}
+    with write_lock:
+        try:
+            if get_user_index(user_id):
+                link = load_user_link(user_id)
+                return {"status": "exists", "link": link}
 
-        # Создаем нового пользователя
-        url = create_external_user(user_id)
+            url = create_external_user(user_id)
 
-        if not url:
-            raise HTTPException(status_code=500, detail="User creation failed")
+            if not url:
+                raise HTTPException(status_code=500, detail="User creation failed")
 
-        # Принудительно очищаем кэш, чтобы при следующем запросе userlist обновился
-        user_index_cache.invalidate() 
-        
-        return {
-            "status": "ok",
-            "link": url
-        }
+            user_index_cache.invalidate() 
+            
+            return {
+                "status": "ok",
+                "link": url
+            }
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("create_user crashed")
-        raise HTTPException(status_code=500, detail=str(e))
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("create_user crashed")
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/user/{user_id}/exists")
-def check_user(user_id: int):
-    # Корректная проверка существования пользователя через вызов индекса
+def check_user(user_id: int, _=Security(verify_api_key)):
     index = get_user_index(user_id)
     return {
         "exists": index is not None
@@ -75,12 +101,10 @@ def check_user(user_id: int):
 
 
 @app.get("/user/{user_id}/link")
-def get_link(user_id: int):
-    # Сначала проверяем, есть ли вообще такой пользователь
+def get_link(user_id: int, _=Security(verify_api_key)):
     if not get_user_index(user_id):
         raise HTTPException(status_code=404, detail="User not found")
 
-    # load_user_link сама внутри себя получит индекс по user_id
     link = load_user_link(user_id)
     if not link:
         raise HTTPException(status_code=500, detail="Link generation failed")
@@ -92,32 +116,40 @@ def get_link(user_id: int):
 
 
 @app.delete("/user")
-def delete_user(req: DeleteRequest):
+def delete_user(req: DeleteRequest, _=Security(verify_api_key)):
     user_id = req.user_id
 
-    user_index = get_user_index(user_id)
-    if not user_index:
-        raise HTTPException(status_code=404, detail="User not found")
+    with write_lock:
+        try:
+            user_index = get_user_index(user_id)
+            if not user_index:
+                raise HTTPException(status_code=404, detail="User not found")
 
-    if not remove_external_user(user_index):
-        raise HTTPException(status_code=500, detail="rmuser failed")
+            if not remove_external_user(user_index):
+                raise HTTPException(status_code=500, detail="rmuser failed")
 
-    # Сбрасываем кэш после удаления, чтобы данные обновились
-    user_index_cache.invalidate()
-    return {"status": "deleted"}
+            user_index_cache.invalidate()
+            return {"status": "deleted"}
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("delete_user crashed")
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/user/schedule-delete")
-def schedule_delete(req: ScheduleRequest):
+def schedule_delete(req: ScheduleRequest, _=Security(verify_api_key)):
 
     def delete():
-        try:
-            user_index = get_user_index(req.user_id)
-            if user_index:
-                if remove_external_user(user_index):
-                    user_index_cache.invalidate()
-        except Exception as e:
-            logger.error(f"scheduled delete error: {e}")
+        with write_lock:
+            try:
+                user_index = get_user_index(req.user_id)
+                if user_index:
+                    if remove_external_user(user_index):
+                        user_index_cache.invalidate()
+            except Exception as e:
+                logger.error(f"scheduled delete error: {e}")
 
     threading.Timer(req.seconds, delete).start()
 

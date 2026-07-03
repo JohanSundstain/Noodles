@@ -1,13 +1,18 @@
+import time
 import requests
 
-import time
+from config import API_KEY
+
 IP = "45.43.159.220:8000"
 
-
 class APIClient:
-    def __init__(self, ip):
+    def __init__(self, ip, api_key):
         self.base_url = f"http://{ip}"
         self.session = requests.Session()
+        
+        # Добавляем заголовок авторизации один раз. 
+        # Теперь requests будет автоматически слать его с каждым запросом.
+        self.session.headers.update({"X-API-Key": api_key})
 
     # ------------------------
     # CREATE USER
@@ -21,7 +26,7 @@ class APIClient:
             )
 
             data = response.json()
-            print("CREATE:", data)
+            print(f"CREATE [{response.status_code}]:", data)
             return data
 
         except Exception as e:
@@ -39,7 +44,7 @@ class APIClient:
             )
 
             data = response.json()
-            print("DELETE:", data)
+            print(f"DELETE [{response.status_code}]:", data)
             return data
 
         except Exception as e:
@@ -56,7 +61,7 @@ class APIClient:
             )
 
             data = response.json()
-            print("EXISTS:", data)
+            print(f"EXISTS [{response.status_code}]:", data)
             return data
 
         except Exception as e:
@@ -73,7 +78,7 @@ class APIClient:
             )
 
             data = response.json()
-            print("LINK:", data)
+            print(f"LINK [{response.status_code}]:", data)
             return data
 
         except Exception as e:
@@ -94,7 +99,7 @@ class APIClient:
             )
 
             data = response.json()
-            print("SCHEDULE DELETE:", data)
+            print(f"SCHEDULE DELETE [{response.status_code}]:", data)
             return data
 
         except Exception as e:
@@ -104,7 +109,8 @@ class APIClient:
 # ------------------------
 # TEST
 # ------------------------
-api = APIClient(IP)
+# Передаем IP сервера и наш секретный API-ключ
+api = APIClient(IP, API_KEY)
 
 print("--- Тест 1: Создание пользователя ---")
 api.create_user(12)
