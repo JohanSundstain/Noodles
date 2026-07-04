@@ -60,7 +60,7 @@ def country_handler(call):
 	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
 	database_manager.update_user_server(user_id, min_server)
 
-	bot.edit_message_text(f"Локация изменена: {country}", call.message.chat.id, call.message.message_id, reply_markup=cancel_handler(call))
+	#bot.edit_message_text(f"Локация изменена: {country}", call.message.chat.id, call.message.message_id, reply_markup=cancel_handler(call))
 	bot.answer_callback_query(call.id)
 
 
