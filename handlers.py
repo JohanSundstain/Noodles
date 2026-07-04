@@ -111,10 +111,10 @@ def plan_handler(call):
 def approved_handler(call):
 	data = call.data.split(':')
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
 
 	user_id = int(data[1])
 	plan = int(data[2])
+	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
 
 	result = database_manager.create_subscription(user_id, DAYS[plan])
 
