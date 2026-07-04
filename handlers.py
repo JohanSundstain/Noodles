@@ -37,7 +37,7 @@ from config import (
 	LOCATION_BUTTON,
 	BONUS)
 
-from servers import get_country_ids, get_api_server
+from servers import server_manager
 
 user_plan = {}
 user_country = {}
@@ -51,12 +51,17 @@ def country_handler(call):
 	user_id = call.from_user.id
 	data = call.data
 	country = data.split(":")[1]
-	if is_admin(user_id):
-		bot.edit_message_text("Выберите тариф", user_id, call.message.message_id, reply_markup=temp_link_keyboard(country))
-	else:
 
-		bot.edit_message_text("Выберите тариф", user_id, call.message.message_id, reply_markup=buy_keyboard())
+	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 5)
 	bot.answer_callback_query(call.id)
+
+	country_ids = server_manager.get_country_ids(country)
+	servers_load = database_manager.get_servers_load(country_ids)
+	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+	database_manager.update_user_server(user_id, min_server)
+
+	bot.edit_message_text(f"Локация изменена: {country}", user_id, call.message.message_id, reply_markup=cancel_handler())
+
 
 def ref_handler(message):
 	user_id = message.from_user.id
@@ -86,7 +91,6 @@ def help_handler(message):
 	)
 	bot.send_message(user_id, text, reply_markup=cancel_keyboard(), parse_mode='HTML' )
 
-
 def plan_handler(call):
 	user_id = call.from_user.id
 	plan = int(call.data.split(':')[1])
@@ -110,15 +114,16 @@ def plan_handler(call):
 
 def approved_handler(call):
 	data = call.data.split(':')
-	bot.answer_callback_query(call.id)
+	
 
 	user_id = int(data[1])
 	plan = int(data[2])
 	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
+	bot.answer_callback_query(call.id)
 
 	result = database_manager.create_subscription(user_id, DAYS[plan])
 
-	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 30)
+	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 120)
 
 	if result is not None:
 		inviter_id = result['inviter_id']
@@ -126,8 +131,8 @@ def approved_handler(call):
 
 	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
 	info_message = """Сообщение исчезнет через 120 сек.\n
-	Повторно получить ссылку: <code>Меню</code> -> <code>Статус</code>\n
-	❗️ Обязательно выберите локацию, если купили подписку впервые\n."""
+	Получить ссылку: <code>Меню</code> -> <code>Статус</code>\n
+	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
 
 	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
 
@@ -304,11 +309,17 @@ def router(message):
 			send_temp_message(bot, user_id, "💤 Администратор спит, поппробуйте позже")
 
 	if text == STATUS_BUTTON:
-		paid_days = database_manager.get_paid_days()
-		if paid_days > 0:
-			bot.send_message(user_id, "У вас осталось: {paid_days} д.", reply_markup=status_keyboard())
+		paid_days = database_manager.get_paid_days(user_id)
+		location_id = database_manager.get_user_server_id(user_id)
+		country_conf = server_manager.get_country_by_server_id(location_id)
+		country_name = country_conf.name
+		if not is_admin(user_id):
+			if paid_days > 0:
+				bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_name}", reply_markup=status_keyboard())
+			else:
+				bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
 		else:
-			bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
+			bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_name}", reply_markup=status_keyboard())
 	
 	if text == LOCATION_BUTTON:
 		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())
