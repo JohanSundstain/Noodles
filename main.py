@@ -2,9 +2,7 @@ import time
 
 from logger import logger
 from bot import bot
-import handlers
 from scheduler import start_scheduler
-
 
 if __name__ == '__main__':
     try:
@@ -25,5 +23,4 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f'Критическая ошибка: {e}')
     finally:
-        handlers.db.close()
         logger.info('Ресурсы освобождены')
