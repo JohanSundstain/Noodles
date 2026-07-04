@@ -85,10 +85,10 @@ def status_keyboard():
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
 
-def admin_approve_reject_keyboard(user_id, plan, counrty):
+def admin_approve_reject_keyboard(user_id, plan):
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("✅ Подтвердить", callback_data=f"approve:{user_id}:{plan}:{counrty}"))
-	markup.add(types.InlineKeyboardButton("❌ Отклонить", callback_data=f"reject:{user_id}:{plan}:{counrty}"))
+	markup.add(types.InlineKeyboardButton("✅ Подтвердить", callback_data=f"approve:{user_id}:{plan}"))
+	markup.add(types.InlineKeyboardButton("❌ Отклонить", callback_data=f"reject:{user_id}:{plan}"))
 
 	return markup
 

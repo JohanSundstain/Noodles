@@ -227,14 +227,13 @@ def handle_file_upload(message):
 		user_id = message.from_user.id
 		username = message.from_user.username or 'no_username'
 		plan = user_plan.pop(user_id)
-		country = user_country.pop(user_id)
 
 		if not plan:
 			bot.send_message(user_id, '❗ Сначала выбери тариф')
 			return
 
-		keyboard = admin_approve_reject_keyboard(user_id, plan, country)
-		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\nСтрана: {country}\nID: {user_id}'
+		keyboard = admin_approve_reject_keyboard(user_id, plan)
+		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\n\nID: {user_id}'
 
 		if message.content_type == 'photo':
 			bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, reply_markup=keyboard)
