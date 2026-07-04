@@ -52,9 +52,6 @@ def country_handler(call):
 	data = call.data
 	country = data.split(":")[1]
 
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 5)
-	bot.answer_callback_query(call.id)
-
 	country_ids = server_manager.get_country_ids(country)
 	servers_load = database_manager.get_servers_load(country_ids)
 
@@ -62,6 +59,8 @@ def country_handler(call):
 	database_manager.update_user_server(user_id, min_server)
 
 	bot.edit_message_text(f"Локация изменена: {country}", user_id, call.message.message_id, reply_markup=cancel_handler(call))
+	bot.answer_callback_query(call.id)
+
 
 
 def ref_handler(message):
