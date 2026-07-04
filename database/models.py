@@ -11,7 +11,7 @@ class User(Base):
     paid_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     
     # Поле для нашей балансировки серверов (из прошлых шагов)
-    current_server: Mapped[str] = mapped_column(String, default='de-1', nullable=False)
+    current_server: Mapped[str] = mapped_column(String, default='none', nullable=False)
 
     # Связь один-к-одному с таблицей рефералов
     referral = relationship('Referral', back_populates='user', uselist=False, cascade='all, delete-orphan')
