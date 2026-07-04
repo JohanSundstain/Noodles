@@ -64,7 +64,11 @@ def country_handler(call):
 
 	database_manager.update_user_server(user_id, min_server)
 
-	bot.edit_message_text(f"Локация изменена: {country_conf.emoji} {country_conf.name}", call.message.chat.id, call.message.message_id, parse_mode="Markdown")
+	bot.edit_message_text(f"Локация изменена: {country_conf.emoji} {country_conf.name}",
+		call.message.chat.id, 
+		call.message.message_id,
+		reply_markup=cancel_keyboard(),
+		parse_mode="Markdown")
 	bot.answer_callback_query(call.id)
 
 
