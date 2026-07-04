@@ -29,7 +29,7 @@ class ServerInterface:
 			]
 		),
 		"UNKNOWN": CountryConfig(
-			name="no-location",
+			name="Локация не выбрана",
 			emoji="🏴‍☠️",
 			servers=[
 				APIClient(id="none", ip="0.0.0.0:8000", api_key=API_TOKEN), # ПОМЕНЯЙ СУКА ПОТОМ ТОЛЬКО, А ТО ОПЯТЬ ЗАБУДЕШЬ Е6ЛАН

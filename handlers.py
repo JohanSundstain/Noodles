@@ -57,6 +57,7 @@ def country_handler(call):
 
 	country_ids = server_manager.get_country_ids(country)
 	servers_load = database_manager.get_servers_load(country_ids)
+
 	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
 	database_manager.update_user_server(user_id, min_server)
 
@@ -319,7 +320,7 @@ def router(message):
 			else:
 				bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
 		else:
-			bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_name}", reply_markup=status_keyboard())
+			bot.send_message(user_id, f"Локация: {country_name}", reply_markup=status_keyboard())
 	
 	if text == LOCATION_BUTTON:
 		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())

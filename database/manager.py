@@ -77,7 +77,15 @@ class DatabaseManager(DatabaseConnection):
 				.where(User.current_server.in_(server_ids))
 				.group_by(User.current_server)
 			).all()
-			return dict(result) # Вернет {'de-1': 142, 'de-2': 98}
+
+			servers_load = dict(result)
+			for id in server_ids:
+				if id in servers_load:
+					continue
+				else:
+					servers_load[id] = 0
+					
+			return servers_load # Вернет {'de-1': 142, 'de-2': 98}
 
 	def update_user_server(self, user_id: int, server_id: str) -> None:
 		with self.session_scope() as session:
