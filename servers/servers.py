@@ -18,21 +18,21 @@ class ServerInterface:
 			name="Финляндия",
 			emoji="🇫🇮",
 			servers=[
-				APIClient(id="fi-1", ip="45.43.159.220:8000", api_key=API_TOKEN), # ПОМЕНЯЙ СУКА ПОТОМ ТОЛЬКО, А ТО ОПЯТЬ ЗАБУДЕШЬ Е6ЛАН
+				APIClient(id="fi-1", ip="45.43.159.220:8000", api_key=API_TOKEN), 
 			]
 		),
 		"HK": CountryConfig(
 			name="Гонконг",
 			emoji="🇭🇰",
 			servers=[
-				APIClient(id="hk-1", ip="1.1.1.1:8000", api_key=API_TOKEN), # ПОМЕНЯЙ СУКА ПОТОМ ТОЛЬКО, А ТО ОПЯТЬ ЗАБУДЕШЬ Е6ЛАН
+				APIClient(id="hk-1", ip="1.1.1.1:8000", api_key=API_TOKEN), 
 			]
 		),
 		"UNKNOWN": CountryConfig(
 			name="Локация не выбрана",
 			emoji="🏴‍☠️",
 			servers=[
-				APIClient(id="none", ip="0.0.0.0:8000", api_key=API_TOKEN), # ПОМЕНЯЙ СУКА ПОТОМ ТОЛЬКО, А ТО ОПЯТЬ ЗАБУДЕШЬ Е6ЛАН
+				APIClient(id="none", ip="0.0.0.0:8000", api_key=API_TOKEN), 
 			]
 		)
 	}
