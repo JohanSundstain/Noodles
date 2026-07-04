@@ -90,9 +90,7 @@ def help_handler(message):
 def plan_handler(call):
 	user_id = call.from_user.id
 	plan = int(call.data.split(':')[1])
-	country = call.data.split(':')[2]
 	user_plan[user_id] = plan
-	user_country[user_id] = country
 
 	if plan == -1:
 		message = '<b>Отправьте боту код в чат командой:</b>\n<code>/code КОД</code>\n'
