@@ -90,24 +90,19 @@ def create_user(req: UserRequest, _=Security(verify_api_key)):
 @app.get("/user/{user_id}/exists")
 def check_user(user_id: int, _=Security(verify_api_key)):
 	index = get_user_index(user_id)
-	return {
-		"exists": index is not None
-	}
+	return { "exists": index is not None}
 
 
 @app.get("/user/{user_id}/link")
 def get_link(user_id: int, _=Security(verify_api_key)):
 	if not get_user_index(user_id):
-		raise HTTPException(status_code=404, detail="User not found")
+		return { "status": "failed", "details": "User not found"}
 
 	link = load_user_link(user_id)
 	if not link:
-		raise HTTPException(status_code=500, detail="Link generation failed")
-
-	return {
-		"status": "ok",
-		"link": link
-	}
+		return { "status": "failed", "details":"load_user_link() failed"}
+	else:
+		return { "status": "ok", "link": link}
 
 
 @app.delete("/user")
@@ -118,13 +113,13 @@ def delete_user(req: DeleteRequest, _=Security(verify_api_key)):
 		try:
 			user_index = get_user_index(user_id)
 			if not user_index:
-				raise HTTPException(status_code=404, detail="User not found")
+				return {"status": "failed", "details": "User not found"}
 
 			if not remove_external_user(user_index):
-				raise HTTPException(status_code=500, detail="rmuser failed")
+				return {"status": "failed", "details": "rmuser failed"}
 
 			user_index_cache.invalidate()
-			return {"status": "deleted"}
+			return {"status": "ok"}
 			
 		except HTTPException:
 			raise
