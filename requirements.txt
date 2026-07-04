@@ -3,4 +3,3 @@ qrcode
 Pillow
 schedule
 SQLAlchemy>=2.0
-sqlite
