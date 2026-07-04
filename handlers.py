@@ -52,24 +52,55 @@ def country_handler(call):
 	data = call.data
 	country = data.split(":")[1]
 
-	#bot.edit_message_text(f"Локация изменена: нигер", call.message.chat.id, call.message.message_id)
+	country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
+	servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
 
-	country_ids = server_manager.get_country_ids(country)
-	servers_load = database_manager.get_servers_load(country_ids)
-
+	new_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+	country_conf = server_manager.get_country_by_server_id(new_server) # получаем конфиг страны с серверами
 	
+	prev_user_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
+	new_api_client = server_manager.get_api_server(prev_user_server_id)  # новый апи клиент
+	if prev_user_server_id != 'none': # если не получал ссылок
+		prev_api_client = server_manager.get_api_server(prev_user_server_id) 
+		prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем ссылку
+		
+	database_manager.update_user_server(user_id, new_server) # обновляем страну в базе
+	answer = new_api_client.create_user(user_id)
 
-	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-	country_conf = server_manager.get_country_by_server_id(min_server)
-
-	database_manager.update_user_server(user_id, min_server)
-
-	bot.edit_message_text(f"Локация изменена: {country_conf.emoji} {country_conf.name}",
-		call.message.chat.id, 
-		call.message.message_id,
-		reply_markup=cancel_keyboard(),
-		parse_mode="Markdown")
+	if answer['status'] == 'ok':
+		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
+				call.message.chat.id, 
+				call.message.message_id,
+				reply_markup=cancel_keyboard(),
+				parse_mode="Markdown")
+	else:
+		bot.edit_message_text(f"❌ Ошибка создания пользователя.",
+				call.message.chat.id, 
+				call.message.message_id,
+				reply_markup=cancel_keyboard(),
+				parse_mode="Markdown")
+	
 	bot.answer_callback_query(call.id)
+
+
+def qr_handler(call):
+	user_id = call.from_user.id
+	data = call.data
+
+	user_server_id = database_manager.get_user_server_id(user_id)
+	if user_server_id == 'none':
+		bot.delete_message(user_id, call.message.message_id)
+		send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
+		bot.answer_callback_query(call.id)
+		return
+
+
+
+	vless_url = load_user_link(user_id)
+	buffer = qrcode_generate(vless_url)
+	send_temp_photo(bot, user_id, buffer, 30, caption='Сообщение исчезнет через 30 сек.')
+	bot.answer_callback_query(call.id)
+
 
 
 def ref_handler(message):
@@ -320,14 +351,13 @@ def router(message):
 		paid_days = database_manager.get_paid_days(user_id)
 		location_id = database_manager.get_user_server_id(user_id)
 		country_conf = server_manager.get_country_by_server_id(location_id)
-		country_name = country_conf.name
 		if not is_admin(user_id):
 			if paid_days > 0:
-				bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_name}", reply_markup=status_keyboard())
+				bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
 			else:
 				bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
 		else:
-			bot.send_message(user_id, f"Локация: {country_name}", reply_markup=status_keyboard())
+			bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
 	
 	if text == LOCATION_BUTTON:
 		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())
@@ -379,6 +409,8 @@ def callback(call):
 		
 		if data == 'qr':
 			user_id = call.from_user.id
+
+
 			vless_url = load_user_link(user_id)
 			buffer = qrcode_generate(vless_url)
 			send_temp_photo(bot, user_id, buffer, 30, caption='Сообщение исчезнет через 30 сек.')
