@@ -58,9 +58,8 @@ def country_handler(call):
 	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
 	database_manager.update_user_server(user_id, min_server)
 
-	bot.edit_message_text(f"Локация изменена: {country}", user_id, call.message.message_id, reply_markup=cancel_handler(call))
+	bot.edit_message_text(f"Локация изменена: {country}", call.message.chat.id, call.message.message_id, reply_markup=cancel_handler(call))
 	bot.answer_callback_query(call.id)
-
 
 
 def ref_handler(message):
@@ -110,7 +109,6 @@ def plan_handler(call):
 
 	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=cancel_keyboard(), parse_mode='HTML')
 	bot.answer_callback_query(call.id)
-
 
 def approved_handler(call):
 	data = call.data.split(':')
