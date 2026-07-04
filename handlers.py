@@ -52,6 +52,8 @@ def country_handler(call):
 	data = call.data
 	country = data.split(":")[1]
 
+	bot.edit_message_text(f"Локация изменена: нигер", call.message.chat.id, call.message.message_id)
+
 	country_ids = server_manager.get_country_ids(country)
 	servers_load = database_manager.get_servers_load(country_ids)
 
@@ -345,9 +347,11 @@ def callback(call):
 
 		if data == "cancel":
 			cancel_handler(call)
+			return
 
 		if data.startswith('country:'):
 			country_handler(call)
+			return
 
 		if data.startswith('plan:'):
 			plan_handler(call)
