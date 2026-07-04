@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from Noodles.servers.client import APIClient
+from .client import APIClient
 from config import API_TOKEN
 
 @dataclass

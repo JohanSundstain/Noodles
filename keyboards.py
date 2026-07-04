@@ -10,7 +10,7 @@ from config import (
 	HELP_BUTTON,
 	LOCATION_BUTTON)
 
-from Noodles.servers.servers import COUNTRIES
+from servers import server_manager
 
 def cancel_keyboard():
 	markup = types.InlineKeyboardMarkup()
@@ -54,6 +54,7 @@ def owner_meny_keyboard():
 
 def country_keyboard():
 	markup = types.InlineKeyboardMarkup()
+	COUNTRIES = server_manager.get_contries()
 	for country in COUNTRIES:
 		if country != "UNKNOWN":
 			markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}"))
