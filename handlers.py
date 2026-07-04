@@ -57,10 +57,14 @@ def country_handler(call):
 	country_ids = server_manager.get_country_ids(country)
 	servers_load = database_manager.get_servers_load(country_ids)
 
+	
+
 	min_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+	country_conf = server_manager.get_country_by_server_id(min_server)
+
 	database_manager.update_user_server(user_id, min_server)
 
-	bot.edit_message_text(f"Локация изменена: {country}", call.message.chat.id, call.message.message_id)
+	bot.edit_message_text(f"Локация изменена: {country_conf.emoji} {country_conf.name}", call.message.chat.id, call.message.message_id, parse_mode="Markdown")
 	bot.answer_callback_query(call.id)
 
 
