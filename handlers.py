@@ -4,11 +4,12 @@ import sys
 
 from bot import bot
 from config import ADMIN_ID, OWNER_ID, PRICES, NUMBER, DAYS, BOT_LINK
-from database import Database
+from database import database_manager
 from keyboards import (
 	admin_menu_keyboard,
 	cancel_keyboard,
 	user_menu_keyboard,
+	country_keyboard,
 	buy_keyboard,
 	temp_link_keyboard,
 	status_keyboard,
@@ -25,7 +26,6 @@ from telegram_helpers import (
 	is_work_time
 )
 
-
 from config import (
 	BUY_BUTTON,
 	TEMP_LINK_BUTTON,
@@ -33,48 +33,35 @@ from config import (
 	AMDINS_LINK_BUTTON,
 	REF_BUTTON,
 	STATUS_BUTTON,
-	HELP_BUTTON)
+	HELP_BUTTON,
+	LOCATION_BUTTON,
+	BONUS)
 
-from xray import create_user, load_user_link, schedule_user_deletion, delete_users_link
-
-try:
-	db = Database()
-except Exception as e:
-	logger.error(f'Критическая ошибка инициализации БД: {e}')
-	sys.exit(1)
+from servers import get_country_ids, get_api_server
 
 user_plan = {}
+user_country = {}
 temp_links = {}
 
 def cancel_handler(call):
 	bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 	bot.answer_callback_query(call.id)
 
-def show_status(call):
+def country_handler(call):
 	user_id = call.from_user.id
-	
-	bot.answer_callback_query(call.id)
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
-
-	days = db.get_paid_days(user_id)
-
-
-	if days == 0:
-		bot.edit_message_text('❌ У вас нет активной подписки.\n', user_id, call.message.message_id, reply_markup=cancel_keyboard() )
+	data = call.data
+	country = data.split(":")[1]
+	if is_admin(user_id):
+		bot.edit_message_text("Выберите тариф", user_id, call.message.message_id, reply_markup=temp_link_keyboard(country))
 	else:
-		message = f'✅ Дней до конца подписки: {days}.\n'
-		bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=status_keyboard())
 
-	#bot.answer_callback_query(call.id)
-
-def temp_link_handler(message):
-	pass
+		bot.edit_message_text("Выберите тариф", user_id, call.message.message_id, reply_markup=buy_keyboard())
+	bot.answer_callback_query(call.id)
 
 def ref_handler(message):
 	user_id = message.from_user.id
 	link = f'{BOT_LINK}?start={user_id}'
 	bot.send_message(user_id, f'<code>{link}</code>', reply_markup=cancel_keyboard(), parse_mode='HTML')
-
 
 def help_handler(message):
 	user_id = message.from_user.id
@@ -100,14 +87,12 @@ def help_handler(message):
 	bot.send_message(user_id, text, reply_markup=cancel_keyboard(), parse_mode='HTML' )
 
 
-def show_plan(call):
+def plan_handler(call):
 	user_id = call.from_user.id
 	plan = int(call.data.split(':')[1])
+	country = call.data.split(':')[2]
 	user_plan[user_id] = plan
-
-	bot.answer_callback_query(call.id)
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
-
+	user_country[user_id] = country
 
 	if plan == -1:
 		message = '<b>Отправьте боту код в чат командой:</b>\n<code>/code КОД</code>\n'
@@ -122,39 +107,35 @@ def show_plan(call):
 		)
 
 	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=cancel_keyboard(), parse_mode='HTML')
+	bot.answer_callback_query(call.id)
 
 
-def show_approved(call):
+def approved_handler(call):
 	data = call.data.split(':')
 	bot.answer_callback_query(call.id)
 	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
 
 	user_id = int(data[1])
 	plan = int(data[2])
-	is_update = db.get_paid_days(user_id) > 0
-	db.create_subscription(user_id, DAYS[plan])
 
-	if is_update:
-		send_temp_message(bot, user_id, '✅ Подписка продлена.', 30)
-	else:
-		try:
-			vless_url = create_user(user_id)
-			send_qr_and_link(user_id, vless_url)
-		except Exception as e:
-			logger.error(f'Ошибка создания пользователя {user_id}: {e}')
-			send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 30)
+	result = database_manager.create_subscription(user_id, DAYS[plan])
 
-		try:
-			bot.edit_message_caption(chat_id=ADMIN_ID, message_id=call.message.message_id, caption='✅ ПОДТВЕРЖДЕНО')
-		except Exception as e:
-			logger.warning(f'Не удалось отредактировать сообщение администратора: {e}')
+	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 30)
+
+	if result is not None:
+		inviter_id = result['inviter_id']
+		send_temp_message(bot, inviter_id, F'✅ Бонус {BONUS} получен!', 30)
 
 	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
-	send_temp_message(bot, user_id, 'Сообщение исчезнет через 120 сек.\nПовторно получить ссылку: <code>Меню</code> -> <code>Статус</code>', 120, parse_mode='HTML')
+	info_message = """Сообщение исчезнет через 120 сек.\n
+	Повторно получить ссылку: <code>Меню</code> -> <code>Статус</code>\n
+	❗️ Обязательно выберите локацию, если купили подписку впервые\n."""
+
+	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
 
 
 def show_reject(call):
-	user_id, plan = map(int, call.data.split(':')[1:])
+	user_id = int(call.data.split(':')[1]) 
 
 	try:
 		send_temp_message(bot, user_id, '❌ Оплата отклонена. Попробуйте ещё раз или свяжитесь с поддержкой.', 30)
@@ -169,23 +150,35 @@ def show_reject(call):
 	bot.answer_callback_query(call.id)
 
 
-def show_temp_link(call):
+def temp_link_handler(call):
 	plan = int(call.data.split(':')[1])
 
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
+	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается', 30)
 
+	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
+
+	api_client = get_api_server(admin_server_id) # получаем api clietn для сервера админа
 	code = generate_secure_code(5)
 	user_id = int(generate_secure_code(8))
+
+	api_client.schedule_delete(user_id)
+
 	temp_code_deleter(dict=temp_links, key=code, value=(user_id, plan))
-	vless_url = create_user(user_id)
-	
+
+	answer = api_client.create_user(user_id)
+
+	if answer['status'] == "ok":
+		vless_url = answer['link']
+	else:
+		send_temp_message(bot, ADMIN_ID, f"⚠️ Ошибка создания пользователя!", 120, parse_mode="HTML")
+		api_client.delete_user(user_id)
+		return
+
 	send_qr_and_link(ADMIN_ID, vless_url)
 	send_temp_message(bot, ADMIN_ID, f"Код пользователя: <code>{code}</code>", 120, parse_mode="HTML")
-	schedule_user_deletion(user_id)
+	api_client.schedule_delete(user_id)
 	
-	bot.answer_callback_query(call.id)
-
 
 def send_qr_and_link(user_id, url):
 	if not url:
@@ -216,7 +209,7 @@ def start(message):
 		except ValueError:
 			referrer = None
 
-	db.create_new_user(user_id, referrer)
+	database_manager.create_new_user(user_id, referrer)
 
 	try:
 		if user_id == ADMIN_ID:
@@ -235,14 +228,15 @@ def handle_file_upload(message):
 	try:
 		user_id = message.from_user.id
 		username = message.from_user.username or 'no_username'
-		plan = user_plan.get(user_id)
+		plan = user_plan.pop(user_id)
+		country = user_country.pop(user_id)
 
 		if not plan:
 			bot.send_message(user_id, '❗ Сначала выбери тариф')
 			return
 
-		keyboard = admin_approve_reject_keyboard(user_id, plan)
-		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\nID: {user_id}'
+		keyboard = admin_approve_reject_keyboard(user_id, plan, country)
+		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\nСтрана: {country}\nID: {user_id}'
 
 		if message.content_type == 'photo':
 			bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, reply_markup=keyboard)
@@ -313,7 +307,14 @@ def router(message):
 			send_temp_message(bot, user_id, "💤 Администратор спит, поппробуйте позже")
 
 	if text == STATUS_BUTTON:
-		bot.send_message(user_id, "Статус", reply_markup=status_keyboard())
+		paid_days = database_manager.get_paid_days()
+		if paid_days > 0:
+			bot.send_message(user_id, "У вас осталось: {paid_days} д.", reply_markup=status_keyboard())
+		else:
+			bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
+	
+	if text == LOCATION_BUTTON:
+		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())
 
 	if text == REF_BUTTON:
 		ref_handler(message)
@@ -329,9 +330,7 @@ def router(message):
 
 	if text == TEMP_LINK_BUTTON:
 		if is_admin(user_id):
-			bot.send_message(user_id, "Выберите тариф", reply_markup=temp_link_keyboard())
-		
-
+			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())		
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
@@ -341,16 +340,19 @@ def callback(call):
 		if data == "cancel":
 			cancel_handler(call)
 
+		if data.startswith('country:'):
+			country_handler(call)
+
 		if data.startswith('plan:'):
-			show_plan(call)
+			plan_handler(call)
 			return
 		
 		if data.startswith('temp:'):
-			show_temp_link(call)
+			temp_link_handler(call)
 			return
 		
 		if data.startswith('approve:'):
-			show_approved(call)
+			approved_handler(call)
 			return
 		
 		if data.startswith('reject:'):
