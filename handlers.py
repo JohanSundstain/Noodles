@@ -47,9 +47,8 @@ from config import (
 	BONUS)
 
 
-user_plan = {}
-user_country = {}
-temp_links = {}
+user_plan = {} # юзер id: выбранный им план 
+temp_links = {} # 
 
 
 def cancel_handler(call):
@@ -68,15 +67,20 @@ def qr_handler(call):
 	send_temp_message(bot, call.from_user.id, "⏳ Генерация QR...")
 	task_manager.set_task(get_and_send_qrcode, call)
 
+
 def link_handler(call):
 	bot.answer_callback_query(call.id)
 	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
 	task_manager.set_task(get_and_send_link, call)
 
+
 def ref_handler(message):
 	user_id = message.from_user.id
 	link = f'{BOT_LINK}?start={user_id}'
 	bot.send_message(user_id, f'<code>{link}</code>', reply_markup=cancel_keyboard(), parse_mode='HTML')
+
+def code_handler(message):
+
 
 
 def help_handler(message):
@@ -270,8 +274,16 @@ def handle_code_command(message):
 			return
 
 		code = parts[1]
-		if code in temp_links:
-			temp_id, plan = temp_links.pop(code)
+		if code in temp_links: # если код верен
+			"""достаем информацию из оперативной памяти об
+			id временной ссылки и плане
+			чтобы запустить удаление ссылки с сервера админа"""
+			temp_id, plan = temp_links.pop(code) 
+
+			admin_server_id = database_manager.get_user_server_id(ADMIN_ID)
+
+
+
 			delete_users_link(temp_id)
 			db.create_subscription(user_id, DAYS[plan])
 			send_temp_message(bot, user_id, '✅ Код активирован.', 30)

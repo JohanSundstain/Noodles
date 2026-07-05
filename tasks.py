@@ -128,3 +128,7 @@ def create_subscription(call):
 	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
 
 	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
+
+
+def  create_subscription_by_code(call):
+	pass
