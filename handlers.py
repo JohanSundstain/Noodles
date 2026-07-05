@@ -48,6 +48,9 @@ def cancel_handler(call):
 	bot.answer_callback_query(call.id)
 
 def country_handler(call):
+	bot.answer_callback_query(call.id)
+	send_temp_message(bot, user_id, "✈️ Изменение локации...")
+
 	user_id = call.from_user.id
 	data = call.data
 	country = data.split(":")[1]
@@ -55,17 +58,26 @@ def country_handler(call):
 	country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
 	servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
 
-	new_server = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-	country_conf = server_manager.get_country_by_server_id(new_server) # получаем конфиг страны с серверами
+	new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+	country_conf = server_manager.get_country_by_server_id(new_server_id) # получаем конфиг страны с серверами
 	
-	prev_user_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
-	new_api_client = server_manager.get_api_server(prev_user_server_id)  # новый апи клиент
-	if prev_user_server_id != 'none': # если не получал ссылок
-		prev_api_client = server_manager.get_api_server(prev_user_server_id) 
-		prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем ссылку
+	prev_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
+	new_api_client = server_manager.get_api_server(new_server_id)  # новый апи клиент
+
+	if (new_server_id == prev_server_id):
+		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
+				call.message.chat.id, 
+				call.message.message_id,
+				reply_markup=cancel_keyboard(),
+				parse_mode="Markdown")
+		return
+
+	if prev_server_id != 'none': # если ссылка уже была
+		prev_api_client = server_manager.get_api_server(prev_server_id) # апи старого сервера
+		prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем старую ссылку
 		
-	database_manager.update_user_server(user_id, new_server) # обновляем страну в базе
-	answer = new_api_client.create_user(user_id)
+	database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
+	answer = new_api_client.create_user(user_id) # делаем запрос на сервер
 
 	if answer['status'] == 'ok':
 		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
@@ -79,8 +91,7 @@ def country_handler(call):
 				call.message.message_id,
 				reply_markup=cancel_keyboard(),
 				parse_mode="Markdown")
-	
-	bot.answer_callback_query(call.id)
+		
 
 
 def qr_handler(call):
@@ -93,8 +104,6 @@ def qr_handler(call):
 		send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
 		bot.answer_callback_query(call.id)
 		return
-
-
 
 	vless_url = load_user_link(user_id)
 	buffer = qrcode_generate(vless_url)
