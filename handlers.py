@@ -357,17 +357,10 @@ def callback(call):
 			return
 		
 		if data == 'qr':
-			user_id = call.from_user.id
-
-
-			vless_url = load_user_link(user_id)
-			buffer = qrcode_generate(vless_url)
-			send_temp_photo(bot, user_id, buffer, 30, caption='Сообщение исчезнет через 30 сек.')
-			bot.answer_callback_query(call.id)
+			qr_handler(call)
 			return
 		
 		if data == 'link':
-			
 			user_id = call.from_user.id
 			vless_url = load_user_link(user_id)
 			send_temp_message(bot, user_id, f'<code>{vless_url}</code>', 30, parse_mode='HTML')
