@@ -1,10 +1,13 @@
 from logger import logger
 
-from telegram_helpers import (
+from .telegram_helpers import (
     qrcode_generate,
     generate_secure_code,
     send_temp_photo,
     send_temp_message,
+	is_admin,
+	is_work_time,
+	temp_code_deleter
 )
 
 __all__ = [
@@ -18,4 +21,7 @@ __all__ = [
     'generate_secure_code',
     'send_temp_photo',
     'send_temp_message',
+	'is_admin',
+	'is_work_time',
+	'temp_code_deleter'
 ]

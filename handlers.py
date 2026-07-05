@@ -1,10 +1,18 @@
 import sys
 
-# todo РОУТЕР ДЕЛАЙ ОБРАБОТКУ ДЛЯ АДМИНСКИХ КНОПОК
-
 from bot import bot
 from config import ADMIN_ID, OWNER_ID, PRICES, NUMBER, DAYS, BOT_LINK
 from database import database_manager
+from servers import server_manager
+from workers import task_manager
+
+from tasks import (
+	switch_country_task,
+	get_and_send_qrcode,
+	create_subscription
+)
+
+
 from keyboards import (
 	admin_menu_keyboard,
 	cancel_keyboard,
@@ -16,7 +24,7 @@ from keyboards import (
 	admin_approve_reject_keyboard,
 )
 from logger import logger
-from telegram_helpers import (
+from utils import (
 	qrcode_generate,
 	generate_secure_code,
 	send_temp_photo,
@@ -37,85 +45,34 @@ from config import (
 	LOCATION_BUTTON,
 	BONUS)
 
-from servers import server_manager
 
 user_plan = {}
 user_country = {}
 temp_links = {}
 
+
 def cancel_handler(call):
 	bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 	bot.answer_callback_query(call.id)
 
+
 def country_handler(call):
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, user_id, "✈️ Изменение локации...")
-
-	user_id = call.from_user.id
-	data = call.data
-	country = data.split(":")[1]
-
-	country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
-	servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
-
-	new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-	country_conf = server_manager.get_country_by_server_id(new_server_id) # получаем конфиг страны с серверами
+	send_temp_message(bot, call.from_user.id, "✈️ Изменение локации...")
+	task_manager.set_task(switch_country_task, call)
 	
-	prev_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
-	new_api_client = server_manager.get_api_server(new_server_id)  # новый апи клиент
-
-	if (new_server_id == prev_server_id):
-		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
-		return
-
-	if prev_server_id != 'none': # если ссылка уже была
-		prev_api_client = server_manager.get_api_server(prev_server_id) # апи старого сервера
-		prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем старую ссылку
-		
-	database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
-	answer = new_api_client.create_user(user_id) # делаем запрос на сервер
-
-	if answer['status'] == 'ok':
-		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
-	else:
-		bot.edit_message_text(f"❌ Ошибка создания пользователя.",
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
-		
-
 
 def qr_handler(call):
-	user_id = call.from_user.id
-	data = call.data
-
-	user_server_id = database_manager.get_user_server_id(user_id)
-	if user_server_id == 'none':
-		bot.delete_message(user_id, call.message.message_id)
-		send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
-		bot.answer_callback_query(call.id)
-		return
-
-	vless_url = load_user_link(user_id)
-	buffer = qrcode_generate(vless_url)
-	send_temp_photo(bot, user_id, buffer, 30, caption='Сообщение исчезнет через 30 сек.')
 	bot.answer_callback_query(call.id)
-
+	send_temp_message(bot, call.from_user.id, "⏳ Генерация QR...")
+	task_manager.set_task(get_and_send_qrcode, call)
 
 
 def ref_handler(message):
 	user_id = message.from_user.id
 	link = f'{BOT_LINK}?start={user_id}'
 	bot.send_message(user_id, f'<code>{link}</code>', reply_markup=cancel_keyboard(), parse_mode='HTML')
+
 
 def help_handler(message):
 	user_id = message.from_user.id
@@ -140,6 +97,7 @@ def help_handler(message):
 	)
 	bot.send_message(user_id, text, reply_markup=cancel_keyboard(), parse_mode='HTML' )
 
+
 def plan_handler(call):
 	user_id = call.from_user.id
 	plan = int(call.data.split(':')[1])
@@ -160,30 +118,12 @@ def plan_handler(call):
 	bot.edit_message_text(message, user_id, call.message.message_id, reply_markup=cancel_keyboard(), parse_mode='HTML')
 	bot.answer_callback_query(call.id)
 
+
 def approved_handler(call):
-	data = call.data.split(':')
-	
-
-	user_id = int(data[1])
-	plan = int(data[2])
-	send_temp_message(bot, user_id, '⏳ Запрос обрабатывается', 30)
 	bot.answer_callback_query(call.id)
-
-	result = database_manager.create_subscription(user_id, DAYS[plan])
-
-	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 120)
-
-	if result is not None:
-		inviter_id = result['inviter_id']
-		send_temp_message(bot, inviter_id, F'✅ Бонус {BONUS} получен!', 30)
-
-	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
-	info_message = """Сообщение исчезнет через 120 сек.\n
-	Получить ссылку: <code>Меню</code> -> <code>Статус</code>\n
-	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
-
-	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
-
+	send_temp_message(bot, call.from_user.id, '⏳ Запрос обрабатывается...', 30)
+	task_manager.set_task(create_subscription, call)
+	
 
 def show_reject(call):
 	user_id = int(call.data.split(':')[1]) 
