@@ -11,3 +11,5 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger('NoodlesBot')
+
+__all__ = ['logger']

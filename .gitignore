@@ -2,3 +2,4 @@ local_secrets.py
 *.db
 *.log
 database
+/__pycache__/*

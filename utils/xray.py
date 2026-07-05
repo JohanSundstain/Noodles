@@ -1,10 +1,8 @@
 import re
 import subprocess
 
-from logger import logger
-from cache import Cache
-
-user_index_cache = Cache(ttl=120)
+from utils import logger
+from cache import user_index_cache
 
 # ------------------------
 # CORE LOGIC
