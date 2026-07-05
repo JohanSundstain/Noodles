@@ -84,7 +84,7 @@ def get_and_send_qrcode(call):
 		send_temp_photo(bot, user_id, buffer, 30, caption='Сообщение исчезнет через 30 сек.')
 	else:
 		send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
-		logger.error(f"Ошибка получения qrcode от сервера {answer["details"]}")
+		logger.error(f"Ошибка получения qrcode от сервера {answer['details']}")
 
 def create_subscription(call):
 	data = call.data.split(':')
