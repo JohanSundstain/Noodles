@@ -1,5 +1,6 @@
 import time
 import requests
+from utils import logger
 
 from config import API_TOKEN
 
@@ -28,11 +29,11 @@ class APIClient:
 			)
 
 			data = response.json()
-			print(f"CREATE [{response.status_code}]:", data)
+			logger.info(f"CREATE [{response.status_code}]:{data}")
 			return data
 
 		except Exception as e:
-			print("CREATE ERROR:", e)
+			logger.error(f"CREATE ERROR: {e}")
 
 	# ------------------------
 	# DELETE USER
@@ -46,11 +47,11 @@ class APIClient:
 			)
 
 			data = response.json()
-			print(f"DELETE [{response.status_code}]:", data)
+			logger.info(f"DELETE [{response.status_code}]: {data}")
 			return data
 
 		except Exception as e:
-			print("DELETE ERROR:", e)
+			logger.error(f"DELETE ERROR: {e}")
 
 	# ------------------------
 	# CHECK USER EXISTS
@@ -63,11 +64,11 @@ class APIClient:
 			)
 
 			data = response.json()
-			print(f"EXISTS [{response.status_code}]:", data)
+			logger.info(f"EXISTS [{response.status_code}]: {data}")
 			return data
 
 		except Exception as e:
-			print("EXISTS ERROR:", e)
+			logger.error(f"EXISTS ERROR:", e)
 
 	# ------------------------
 	# GET USER LINK
@@ -80,11 +81,11 @@ class APIClient:
 			)
 
 			data = response.json()
-			print(f"LINK [{response.status_code}]:", data)
+			logger.info(f"LINK [{response.status_code}]: {data}")
 			return data
 
 		except Exception as e:
-			print("LINK ERROR:", e)
+			logger.error(f"LINK ERROR: {e}")
 
 	# ------------------------
 	# SCHEDULE DELETE
@@ -101,11 +102,11 @@ class APIClient:
 			)
 
 			data = response.json()
-			print(f"SCHEDULE DELETE [{response.status_code}]:", data)
+			logger.info(f"SCHEDULE DELETE [{response.status_code}]: {data}")
 			return data
 
 		except Exception as e:
-			print("SCHEDULE ERROR:", e)
+			logger.error(f"SCHEDULE ERROR: {e}")
 
 	def ip(self):
 		return self.ip

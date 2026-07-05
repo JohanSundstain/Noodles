@@ -86,6 +86,28 @@ def get_and_send_qrcode(call):
 		send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
 		logger.error(f"Ошибка получения qrcode от сервера {answer['details']}")
 
+
+def get_and_send_link(call):
+	user_id = call.from_user.id
+
+	user_server_id = database_manager.get_user_server_id(user_id) # получаем id сервера пользователя
+
+	if user_server_id == 'none': # если не выбрана локация, то отказываем в генерации
+		bot.delete_message(user_id, call.message.message_id)
+		send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
+		return
+
+	user_api_client = server_manager.get_api_server(user_server_id) # получаем апи клиент к серверу юзера
+	answer = user_api_client.get_link(user_id)
+
+	if answer["status"] == "ok":
+		vless_url = answer["link"]
+		send_temp_message(bot, user_id, f'<code>{vless_url}</code>', 30, parse_mode='HTML')
+	else:
+		send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
+		logger.error(f"Ошибка получения qrcode от сервера {answer['details']}")
+
+
 def create_subscription(call):
 	data = call.data.split(':')
 	

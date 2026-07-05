@@ -9,7 +9,8 @@ from workers import task_manager
 from tasks import (
 	switch_country_task,
 	get_and_send_qrcode,
-	create_subscription
+	create_subscription,
+	get_and_send_link
 )
 
 
@@ -67,6 +68,10 @@ def qr_handler(call):
 	send_temp_message(bot, call.from_user.id, "⏳ Генерация QR...")
 	task_manager.set_task(get_and_send_qrcode, call)
 
+def link_handler(call):
+	bot.answer_callback_query(call.id)
+	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
+	task_manager.set_task(get_and_send_link, call)
 
 def ref_handler(message):
 	user_id = message.from_user.id
@@ -361,11 +366,7 @@ def callback(call):
 			return
 		
 		if data == 'link':
-			user_id = call.from_user.id
-			vless_url = load_user_link(user_id)
-			send_temp_message(bot, user_id, f'<code>{vless_url}</code>', 30, parse_mode='HTML')
-			send_temp_message(bot, user_id, 'Сообщение исчезнет через 30 сек.', 30, parse_mode='HTML')
-			bot.answer_callback_query(call.id)
+			link_handler(call)
 			return
 		
 	except Exception as e:
