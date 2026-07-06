@@ -1,7 +1,7 @@
 import re
 import subprocess
 
-from utils import logger
+from utils import logger, is_admin, is_owner
 from cache import user_index_cache
 
 # ------------------------
@@ -35,7 +35,10 @@ def get_user_index(user_id):
 def load_user_link(user_id):
 	"""Получает vless-ссылку для существующего пользователя по sharelink."""
 	try:
-		user_index = get_user_index(user_id)
+		if is_admin(user_id) or is_owner(user_id):
+			user_index = 1 # главвная ссыка
+		else:
+			user_index = get_user_index(user_id)
 		if not user_index:
 			logger.warning(f'User index not found for user_id: {user_id}')
 			return None

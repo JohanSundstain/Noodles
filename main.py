@@ -136,7 +136,7 @@ def check_user(user_id: int, _=Security(verify_api_key)):
 def get_link(user_id: int, _=Security(verify_api_key)):
 	if not get_user_index(user_id):
 		return { "status": "failed", "details": "User not found"}
-
+	
 	link = load_user_link(user_id)
 	if not link:
 		return { "status": "failed", "details":"load_user_link() failed"}
