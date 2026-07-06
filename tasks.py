@@ -31,7 +31,6 @@ from keyboards import (
 	cancel_keyboard
 )
 
-
 def broadcast(text):
 	user_ids = database_manager.get_all_user_ids()
 	for user_id in user_ids:
@@ -61,11 +60,14 @@ def switch_country_task(call):
 	new_api_client = server_manager.get_api_server(new_server_id)  # новый апи клиент
 
 	if (new_server_id == prev_server_id):
-		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
+		message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
+		Старая ссылка будет удалена через 10 мин.\n
+		Получить обновленную ссылку: <code>Статус</code>"""
+		bot.edit_message_text(message,
 				call.message.chat.id, 
 				call.message.message_id,
 				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
+				parse_mode="HTML")
 		return
 
 	if prev_server_id != 'none': # если ссылка уже была
@@ -122,7 +124,7 @@ def create_subscription(user_id, plan):
 
 	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
 	info_message = """Сообщение исчезнет через 120 сек.\n
-	Получить ссылку: <code>Меню</code> -> <code>Статус</code>\n
+	Получить ссылку: <code>Статус</code>\n
 	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
 
 	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')

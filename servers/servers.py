@@ -18,8 +18,8 @@ class ServerInterface:
 			name="Финляндия",
 			emoji="🇫🇮",
 			servers=[
-				#APIClient(id="fi-1", ip="185.250.181.208:8000", api_key=API_TOKEN), 
-				APIClient(id="fi-1", ip="45.131.135.21:8000", api_key=API_TOKEN), 
+				APIClient(id="fi-1", ip="185.250.181.208:8000", api_key=API_TOKEN), 
+				APIClient(id="fi-2", ip="45.131.135.21:8000", api_key=API_TOKEN), 
 			]
 		),
 		"KZ": CountryConfig(
