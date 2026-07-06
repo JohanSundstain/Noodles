@@ -20,7 +20,14 @@ python -m pip install --upgrade pip
 echo "Установка зависимостей..."
 pip install -r requirements.txt
 
-source venv/bin/activate
+echo "Установка vless на xray..."
+wget -qO- https://raw.githubusercontent.com/ServerTechnologies/simple-xray-core/refs/heads/main/xray-install | bash
+
+echo "Установка vim"
+apt install vim -y
+
+echo "Установка tmux"
+apt install tmux -y
 
 echo "====================================="
 echo "Установка завершена!"
