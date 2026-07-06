@@ -69,6 +69,13 @@ def link_handler(call):
 	task_manager.set_task(get_and_send_link, call)
 
 
+def admin_link_handler(message):
+	user_id = message.from_user.id
+	if is_admin(user_id):
+			bot.send_message(user_id, "В разработке")
+		return
+
+
 def ref_handler(message):
 	user_id = message.from_user.id
 	link = f'{BOT_LINK}?start={user_id}'
@@ -280,11 +287,11 @@ def handle_all_command(message):
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
 
 
-@bot.message_handler(commands=['test'])
+@bot.message_handler(commands=['admin'])
 def handle_all_command(message):
 	user_id = message.from_user.id
 	if is_owner(user_id):
-		from temp import func
+		from owner_funcs import func
 		func()
 
 
@@ -321,8 +328,8 @@ def router(message):
 		return
 
 	if text == AMDINS_LINK_BUTTON:
-		bot.send_message(user_id, "В разработке")
-		return
+		admin_link_handler(message)
+	
 
 	if text == TEMP_LINK_BUTTON:
 		if is_admin(user_id):
