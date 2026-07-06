@@ -109,7 +109,8 @@ def get_temp_link(req: ScheduleRequest, _=Security(verify_api_key)):
 					def delete():
 						with write_lock:
 							try:
-								remove_external_user(temp_index)
+								link_index = get_user_index(temp_index)
+								remove_external_user(link_index)
 							except Exception as e:
 								logger.error(f"scheduled delete error: {e}")
 
