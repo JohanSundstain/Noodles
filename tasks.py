@@ -61,11 +61,18 @@ def switch_country_task(call):
 		database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
 		message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
 			Получить обновленную ссылку: <code>Статус</code>"""
-		send_temp_message(bot, call.message.chat.id, message, 120, parse_mode="HTML")
+		bot.edit_message_text(message,
+					call.message.chat.id, 
+					call.message.message_id,
+					reply_markup=cancel_keyboard(),
+					parse_mode="HTML")
 		return
 	
 	paid_days = database_manager.get_paid_days(user_id)
 
+	message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
+			Старая ссылка (если была) будет удалена через 10 мин.\n
+			Получить обновленную ссылку: <code>Статус</code>"""
 	if paid_days > 0:
 
 		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
@@ -96,11 +103,7 @@ def switch_country_task(call):
 		answer = new_api_client.create_user(user_id) # делаем запрос на сервер
 
 		if answer['status'] == 'ok':
-			bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
-					call.message.chat.id, 
-					call.message.message_id,
-					reply_markup=cancel_keyboard(),
-					parse_mode="Markdown")
+			bot.edit_message_text(message, call.message.chat.id,  call.message.message_id, reply_markup=cancel_keyboard(), parse_mode="Markdown")
 		else:
 			bot.edit_message_text(f" Ошибка создания пользователя.",
 					call.message.chat.id, 
