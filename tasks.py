@@ -95,6 +95,7 @@ def get_and_send_link(call):
 
 
 def create_subscription(user_id, plan):
+	send_temp_message(bot, user_id, f'СОЗДАЮ ПОДПИСКУ', 120)
 	result = database_manager.create_subscription(user_id, DAYS[plan])
 
 	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 120)

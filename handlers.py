@@ -236,7 +236,7 @@ def handle_code_command(message):
 		code = parts[1]
 		if code in temp_codes:
 			""" Если код верен, создаем пользователю подписку с его планом"""
-			plan = temp_codes[code] 
+			plan = temp_codes.pop(code, None)
 			task_manager.set_task(create_subscription, user_id, plan)
 			send_temp_message(bot, user_id, '✅ Код активирован.', 30)
 		else:
