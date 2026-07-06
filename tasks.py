@@ -141,7 +141,7 @@ def get_and_send_link(call):
 		send_temp_photo(bot, user_id, buffer, 30, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
 	else:
 		send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
-		logger.error(f"Ошибка получения qrcode от сервера {answer['details']}")
+		logger.error(f"Ошибка получения ссылки от сервера {answer['details']}")
 
 
 def create_subscription(user_id, plan):
