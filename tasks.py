@@ -61,7 +61,7 @@ def switch_country_task(call):
 
 	if (new_server_id == prev_server_id):
 		message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
-		Старая ссылка будет удалена через 10 мин.\n
+		Старая ссылка (если была) будет удалена через 10 мин.\n
 		Получить обновленную ссылку: <code>Статус</code>"""
 		bot.edit_message_text(message,
 				call.message.chat.id, 
@@ -140,7 +140,6 @@ def create_temp_link(call):
 	
 	api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
 
-	# TODO ИЗМЕНИТЬ ВРЕМЯ
 	answer = api_client.get_temp_link(ADMIN_ID) # делаем запрос на сервер, чтобы создать временную ссылку
  
 	if answer["status"] == "ok":
