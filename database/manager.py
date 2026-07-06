@@ -30,6 +30,11 @@ class DatabaseManager(DatabaseConnection):
 		with self.session_scope() as session:
 			user = session.get(User, user_id)  
 			return user.current_server
+		
+	def get_all_user_ids(self) -> list[int]:
+		with self.session_scope() as session:
+			result = session.execute(select(User.id)).scalars().all()
+			return result
 
 	def create_subscription(self, user_id: int, days: int) -> dict | None:
 		"""Начисляет дни. Если положен бонус рефералу — возвращает данные для отправки сообщения"""

@@ -11,7 +11,8 @@ from tasks import (
 	create_subscription,
 	get_and_send_link,
 	create_temp_link,
-	send_user_stat
+	send_user_stat,
+	broadcast
 )
 
 from keyboards import (
@@ -254,6 +255,31 @@ def handle_code_command(message):
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
 
 
+@bot.message_handler(commands=['all'])
+def handle_all_command(message):
+	try:
+		parts = message.text.split()
+		user_id = message.from_user.id
+
+		if len(parts) < 2:
+			warning = (
+				'❌ Вы не ввели сообщение!\n'
+				'<br>📝 Использование</br>: <code>/all СООБЩЕНИЕ</code>\n'
+				'<br>Пример</br>: <code>/all Всем привет!</code>'
+			)
+			send_temp_message(bot, user_id, warning, 30, parse_mode='HTML')
+			return
+
+		all_message = " ".join(parts[1:])
+
+		task_manager.set_task(broadcast, all_message)
+
+	except Exception as e:
+		logger.error(f'Ошибка: {e}')
+		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
+
+
+
 @bot.message_handler(func=lambda m: True)
 def router(message):
 	text = message.text
@@ -294,6 +320,9 @@ def router(message):
 		if is_admin(user_id):
 			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())	
 		return	
+
+
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):

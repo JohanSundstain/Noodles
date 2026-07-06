@@ -15,10 +15,10 @@ API_TOKEN = api_key
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///bot.db')
 
 BUY_BUTTON = "💳 Купить подписку"
-AMDINS_LINK_BUTTON = "🔗 Админская ссылка"
-STATISTIC_BUTTON = "📊 Статистика"
+AMDINS_LINK_BUTTON = "📌 Админская ссылка"
+STATISTIC_BUTTON = "📈 Статистика"
 TEMP_LINK_BUTTON = "🔗 Временная ссылка"
-STATUS_BUTTON = "📊 Статус"
+STATUS_BUTTON = "🗂 Статус"
 REF_BUTTON = "🔗 Реферальная ссылка"
 HELP_BUTTON = "🔍 Справка"
 LOCATION_BUTTON = "🌏 Выбрать локацию"

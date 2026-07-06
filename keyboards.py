@@ -27,9 +27,9 @@ def admin_menu_keyboard():
 		resize_keyboard=True,
 		is_persistent=True
 	)
-	markup.row(types.KeyboardButton(AMDINS_LINK_BUTTON), types.KeyboardButton(LOCATION_BUTTON))
-	markup.row(types.KeyboardButton(STATISTIC_BUTTON), types.KeyboardButton(TEMP_LINK_BUTTON))
-	markup.row(types.KeyboardButton(STATUS_BUTTON), types.KeyboardButton(HELP_BUTTON))
+	markup.row(types.KeyboardButton(AMDINS_LINK_BUTTON),types.KeyboardButton(TEMP_LINK_BUTTON))
+	markup.row(types.KeyboardButton(LOCATION_BUTTON), types.KeyboardButton(HELP_BUTTON))
+	markup.row(types.KeyboardButton(STATISTIC_BUTTON), types.KeyboardButton(STATUS_BUTTON))
 	return markup
 
 

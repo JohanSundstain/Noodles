@@ -1,5 +1,7 @@
 from servers import server_manager
 from database import database_manager
+from telebot.apihelper import ApiTelegramException
+import time
 
 from utils import (
 	qrcode_generate,
@@ -28,6 +30,21 @@ from bot import bot
 from keyboards import (
 	cancel_keyboard
 )
+
+
+def broadcast(text):
+	user_ids = database_manager.get_all_user_ids()
+	for user_id in user_ids:
+		try:
+			bot.send_message(user_id, text)
+			time.sleep(0.05)  # ~20 msg/sec безопасно
+
+		except ApiTelegramException as e:
+			print(f"Error for {user_id}: {e}")
+
+		except Exception as e:
+			print(f"Unexpected error for {user_id}: {e}")
+
 
 def switch_country_task(call):
 	user_id = call.from_user.id
@@ -122,13 +139,12 @@ def create_temp_link(call):
 	api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
 
 	# TODO ИЗМЕНИТЬ ВРЕМЯ
-	answer = api_client.get_temp_link(ADMIN_ID, 300) # делаем запрос на сервер, чтобы создать временную ссылку
+	answer = api_client.get_temp_link(ADMIN_ID) # делаем запрос на сервер, чтобы создать временную ссылку
  
 	if answer["status"] == "ok":
 		vless_url = answer['link']
 		code = generate_secure_code(6)
-		# TODO ИЗМЕНИТЬ ВРЕМЯ
-		temp_code_deleter(code, int(plan), 300)
+		temp_code_deleter(code, int(plan))
 		buffer = qrcode_generate(vless_url)
 		send_temp_photo(bot, ADMIN_ID, buffer, 120, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
 		send_temp_message(bot, ADMIN_ID, f"Код: <code>{code}</code>", 120, parse_mode="HTML")

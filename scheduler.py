@@ -5,6 +5,8 @@ import threading
 from logger import logger
 import handlers
 
+from database import database_manager
+
 
 def run_schedule():
     while True:
@@ -13,8 +15,9 @@ def run_schedule():
 
 
 def daily_job():
-    handlers.db.reduce_days()
-
+    result = database_manager.bulk_decrease_days()
+    logger.info(f"Уменьшено дней у {result} польз.")
+    
 
 def start_scheduler():
     schedule.every().day.at('00:00').do(daily_job)
