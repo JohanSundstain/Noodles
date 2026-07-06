@@ -165,25 +165,3 @@ def send_user_stat(user_id):
 			bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
 	else:
 		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
-
-def send_admin_link(call):
-
-	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
-
-	if admin_server_id == 'none': # админ не выбрал локацию
-		send_temp_message(bot, ADMIN_ID, "❌ Не выбрана локация.", 30)
-		return 
-	
-	api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
-
-	answer = api_client.create_user(ADMIN_ID) # делаем запрос на сервер, чтобы создать временную ссылку
- 
-	if answer["status"] == "ok":
-		vless_url = answer['link']
-		buffer = qrcode_generate(vless_url)
-		send_temp_photo(bot, ADMIN_ID, buffer, 120, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
-	else:
-		send_temp_message(bot, ADMIN_ID, f"⚠️ Ошибка генерации ссылки!", 120, parse_mode="HTML")
-		logger.error(f"Ошибки вызова create_user(): {answer['details']}")
-		return
-	

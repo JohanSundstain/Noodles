@@ -42,7 +42,6 @@ from config import (
 	BUY_BUTTON,
 	TEMP_LINK_BUTTON,
 	STATISTIC_BUTTON,
-	AMDINS_LINK_BUTTON,
 	REF_BUTTON,
 	STATUS_BUTTON,
 	HELP_BUTTON,
@@ -72,8 +71,8 @@ def link_handler(call):
 def admin_link_handler(message):
 	user_id = message.from_user.id
 	if is_admin(user_id):
-			bot.send_message(user_id, "В разработке")
-		return
+		bot.send_message(user_id, "В разработке")
+		
 
 
 def ref_handler(message):
@@ -327,9 +326,6 @@ def router(message):
 		bot.send_message(user_id, "В разработке")
 		return
 
-	if text == AMDINS_LINK_BUTTON:
-		admin_link_handler(message)
-	
 
 	if text == TEMP_LINK_BUTTON:
 		if is_admin(user_id):
