@@ -51,8 +51,22 @@ def switch_country_task(call):
 	data = call.data
 	country = data.split(":")[1]
 
+	if is_admin(user_id) or is_owner(user_id):
+		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
+		servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
+
+		new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+		country_conf = server_manager.get_country_by_server_id(new_server_id) # получаем конфиг страны с серверами
+
+		database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
+		message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
+			Получить обновленную ссылку: <code>Статус</code>"""
+		send_temp_message(bot, call.message.chat.id, message, 120, parse_mode="HTML")
+		return
+	
 	paid_days = database_manager.get_paid_days(user_id)
-	if (paid_days > 0) or is_admin(user_id) or is_owner(user_id):
+
+	if paid_days > 0:
 
 		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
 		servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
