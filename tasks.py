@@ -10,7 +10,8 @@ from utils import (
 	logger,
 	generate_secure_code,
 	temp_code_deleter,
-	is_admin
+	is_admin,
+	is_owner
 )
 
 from keyboards import(
@@ -50,46 +51,56 @@ def switch_country_task(call):
 	data = call.data
 	country = data.split(":")[1]
 
-	country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
-	servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
+	paid_days = database_manager.get_paid_days(user_id)
+	if (paid_days > 0) or is_admin(user_id) or is_owner(user_id):
 
-	new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-	country_conf = server_manager.get_country_by_server_id(new_server_id) # получаем конфиг страны с серверами
-	
-	prev_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
-	new_api_client = server_manager.get_api_server(new_server_id)  # новый апи клиент
+		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
+		servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
 
-	if (new_server_id == prev_server_id):
-		message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
-		Старая ссылка (если была) будет удалена через 10 мин.\n
-		Получить обновленную ссылку: <code>Статус</code>"""
-		bot.edit_message_text(message,
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="HTML")
-		return
-
-	if prev_server_id != 'none': # если ссылка уже была
-		prev_api_client = server_manager.get_api_server(prev_server_id) # апи старого сервера
-		prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем старую ссылку
+		new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
+		country_conf = server_manager.get_country_by_server_id(new_server_id) # получаем конфиг страны с серверами
 		
-	database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
-	answer = new_api_client.create_user(user_id) # делаем запрос на сервер
+		prev_server_id = database_manager.get_user_server_id(user_id) # id предыдущего сервера
+		new_api_client = server_manager.get_api_server(new_server_id)  # новый апи клиент
 
-	if answer['status'] == 'ok':
-		bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
+		if (new_server_id == prev_server_id):
+			message = f"""✅ Локация изменена: {country_conf.emoji} {country_conf.name}\n
+			Старая ссылка (если была) будет удалена через 10 мин.\n
+			Получить обновленную ссылку: <code>Статус</code>"""
+			bot.edit_message_text(message,
+					call.message.chat.id, 
+					call.message.message_id,
+					reply_markup=cancel_keyboard(),
+					parse_mode="HTML")
+			return
+
+		if prev_server_id != 'none': # если ссылка уже была
+			prev_api_client = server_manager.get_api_server(prev_server_id) # апи старого сервера
+			prev_api_client.schedule_delete(user_id, 600) # через 10 минут удаляем старую ссылку
+			
+		database_manager.update_user_server(user_id, new_server_id) # обновляем страну в базе
+		answer = new_api_client.create_user(user_id) # делаем запрос на сервер
+
+		if answer['status'] == 'ok':
+			bot.edit_message_text(f"✅ Локация изменена: {country_conf.emoji} {country_conf.name}",
+					call.message.chat.id, 
+					call.message.message_id,
+					reply_markup=cancel_keyboard(),
+					parse_mode="Markdown")
+		else:
+			bot.edit_message_text(f" Ошибка создания пользователя.",
+					call.message.chat.id, 
+					call.message.message_id,
+					reply_markup=cancel_keyboard(),
+					parse_mode="Markdown")
 	else:
-		bot.edit_message_text(f"❌ Ошибка создания пользователя.",
-				call.message.chat.id, 
-				call.message.message_id,
-				reply_markup=cancel_keyboard(),
-				parse_mode="Markdown")
-		
+		message = f"❌ Сначала оформите подписку."
+		bot.edit_message_text(message,
+					call.message.chat.id, 
+					call.message.message_id,
+					reply_markup=cancel_keyboard(),
+					parse_mode="HTML")
+		return
 
 def get_and_send_link(call):
 	user_id = call.from_user.id
@@ -158,10 +169,10 @@ def send_user_stat(user_id):
 	paid_days = database_manager.get_paid_days(user_id)
 	location_id = database_manager.get_user_server_id(user_id)
 	country_conf = server_manager.get_country_by_server_id(location_id)
-	if not is_admin(user_id):
+	if is_admin(user_id) or is_owner(user_id):
+		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
+	else:
 		if paid_days > 0:
 			bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
 		else:
 			bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
-	else:
-		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
