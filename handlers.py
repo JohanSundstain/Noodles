@@ -238,15 +238,17 @@ def handle_code_command(message):
 			""" Если код верен, создаем пользователю подписку с его планом"""
 			plan = temp_codes.pop(code, None)
 			task_manager.set_task(create_subscription, user_id, plan)
-			send_temp_message(bot, user_id, '✅ Код активирован.', 30)
+			send_temp_message(bot, user_id, '✅ Код активирован.', 30, reply_markup=user_menu_keyboard())
 		else:
-			send_temp_message(bot, user_id, '❌ Неверный код!', 30)
+			send_temp_message(bot, user_id, '❌ Неверный код!', 30, reply_markup=user_menu_keyboard())
 
 		try:
 			bot.delete_message(user_id, message.message_id)
 			logger.info(f'Сообщение пользователя {user_id} удалено')
 		except Exception as e:
 			logger.warning(f'Не удалось удалить сообщение пользователя: {e}')
+		
+		
 	except Exception as e:
 		logger.error(f'Ошибка: {e}')
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
