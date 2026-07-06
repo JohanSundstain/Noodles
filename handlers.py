@@ -58,21 +58,12 @@ def cancel_handler(call):
 
 def country_handler(call):
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, call.from_user.id, "✈️ Изменение локации...")
 	task_manager.set_task(switch_country_task, call)
 
 
 def link_handler(call):
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
 	task_manager.set_task(get_and_send_link, call)
-
-
-def admin_link_handler(message):
-	user_id = message.from_user.id
-	if is_admin(user_id):
-		bot.send_message(user_id, "В разработке")
-		
 
 
 def ref_handler(message):
@@ -159,7 +150,6 @@ def show_reject(call):
 
 def temp_link_handler(call):
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается...', 30)
 	task_manager.set_task(create_temp_link, call)
 	
 
@@ -325,7 +315,6 @@ def router(message):
 	if text == STATISTIC_BUTTON:
 		bot.send_message(user_id, "В разработке")
 		return
-
 
 	if text == TEMP_LINK_BUTTON:
 		if is_admin(user_id):

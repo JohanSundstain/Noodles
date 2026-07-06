@@ -47,6 +47,7 @@ def broadcast(text):
 
 
 def switch_country_task(call):
+	send_temp_message(bot, call.from_user.id, "✈️ Изменение локации...")
 	user_id = call.from_user.id
 	data = call.data
 	country = data.split(":")[1]
@@ -120,6 +121,8 @@ def switch_country_task(call):
 		return
 
 def get_and_send_link(call):
+	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
+
 	user_id = call.from_user.id
 
 	user_server_id = database_manager.get_user_server_id(user_id) # получаем id сервера пользователя
@@ -159,6 +162,8 @@ def create_subscription(user_id, plan):
 
 
 def create_temp_link(call):
+	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается...', 30)
+
 	plan = call.data.split(":")[1]
 	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
 
