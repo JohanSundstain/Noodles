@@ -58,8 +58,9 @@ class APIClient:
 	# ------------------------
 	def user_exists(self, user_id: int):
 		try:
-			response = self.session.get(
-				f"{self.base_url}/user/{user_id}/exists",
+			response = self.session.post(
+				f"{self.base_url}/user/temp_link"
+				json={},
 				timeout=10
 			)
 
@@ -87,6 +88,24 @@ class APIClient:
 		except Exception as e:
 			logger.error(f"LINK ERROR: {e}")
 
+
+	def get_temp_link(self, user_id: int, seconds: int = 3600):
+		try:
+			response = self.session.get(
+				f"{self.base_url}/user/temp_link",
+				json={
+					"user_id": user_id,
+					"seconds": seconds
+				},
+				timeout=10
+			)
+
+			data = response.json()
+			logger.info(f"LINK [{response.status_code}]: {data}")
+			return data
+
+		except Exception as e:
+			logger.error(f"LINK ERROR: {e}")
 	# ------------------------
 	# SCHEDULE DELETE
 	# ------------------------

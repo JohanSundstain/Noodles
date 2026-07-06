@@ -8,11 +8,11 @@ from workers import task_manager
 
 from tasks import (
 	switch_country_task,
-	get_and_send_qrcode,
 	create_subscription,
-	get_and_send_link
+	get_and_send_link,
+	create_temp_link,
+	send_user_stat
 )
-
 
 from keyboards import (
 	admin_menu_keyboard,
@@ -32,7 +32,8 @@ from utils import (
 	send_temp_message,
 	temp_code_deleter,
 	is_admin,
-	is_work_time
+	is_work_time,
+	temp_codes
 )
 
 from config import (
@@ -48,8 +49,6 @@ from config import (
 
 
 user_plan = {} # юзер id: выбранный им план 
-temp_links = {} # 
-
 
 def cancel_handler(call):
 	bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -60,12 +59,6 @@ def country_handler(call):
 	bot.answer_callback_query(call.id)
 	send_temp_message(bot, call.from_user.id, "✈️ Изменение локации...")
 	task_manager.set_task(switch_country_task, call)
-	
-
-def qr_handler(call):
-	bot.answer_callback_query(call.id)
-	send_temp_message(bot, call.from_user.id, "⏳ Генерация QR...")
-	task_manager.set_task(get_and_send_qrcode, call)
 
 
 def link_handler(call):
@@ -79,8 +72,10 @@ def ref_handler(message):
 	link = f'{BOT_LINK}?start={user_id}'
 	bot.send_message(user_id, f'<code>{link}</code>', reply_markup=cancel_keyboard(), parse_mode='HTML')
 
-def code_handler(message):
 
+def status_handler(message):
+	user_id = message.from_user.id
+	task_manager.set_task(send_user_stat, user_id)
 
 
 def help_handler(message):
@@ -130,8 +125,12 @@ def plan_handler(call):
 
 def approved_handler(call):
 	bot.answer_callback_query(call.id)
+	data = call.data.split(':')
+	user_id = int(data[1])
+	plan = int(data[2])
+
 	send_temp_message(bot, call.from_user.id, '⏳ Запрос обрабатывается...', 30)
-	task_manager.set_task(create_subscription, call)
+	task_manager.set_task(create_subscription, user_id, plan)
 	
 
 def show_reject(call):
@@ -151,49 +150,10 @@ def show_reject(call):
 
 
 def temp_link_handler(call):
-	plan = int(call.data.split(':')[1])
-
 	bot.answer_callback_query(call.id)
-	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается', 30)
-
-	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
-
-	api_client = get_api_server(admin_server_id) # получаем api clietn для сервера админа
-	code = generate_secure_code(5)
-	user_id = int(generate_secure_code(8))
-
-	api_client.schedule_delete(user_id)
-
-	temp_code_deleter(dict=temp_links, key=code, value=(user_id, plan))
-
-	answer = api_client.create_user(user_id)
-
-	if answer['status'] == "ok":
-		vless_url = answer['link']
-	else:
-		send_temp_message(bot, ADMIN_ID, f"⚠️ Ошибка создания пользователя!", 120, parse_mode="HTML")
-		api_client.delete_user(user_id)
-		return
-
-	send_qr_and_link(ADMIN_ID, vless_url)
-	send_temp_message(bot, ADMIN_ID, f"Код пользователя: <code>{code}</code>", 120, parse_mode="HTML")
-	api_client.schedule_delete(user_id)
+	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается...', 30)
+	task_manager.set_task(create_temp_link, call)
 	
-
-def send_qr_and_link(user_id, url):
-	if not url:
-		logger.error(f'Не удалось создать ссылку для пользователя {user_id}')
-		send_temp_message(bot, user_id, '⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.', 30)
-		return
-
-	try:
-		buffer = qrcode_generate(url)
-		send_temp_photo(bot, user_id, buffer, 120)
-		send_temp_message(bot, user_id, f'<code>{url}</code>', 120, parse_mode='HTML')
-	except Exception as e:
-		logger.error(f'Ошибка генерации QR-кода: {e}')
-		send_temp_message(bot, user_id, '⚠️ Ошибка генерации ссылки. Обратитесь в поддержку.', 30)
-
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -274,21 +234,11 @@ def handle_code_command(message):
 			return
 
 		code = parts[1]
-		if code in temp_links: # если код верен
-			"""достаем информацию из оперативной памяти об
-			id временной ссылки и плане
-			чтобы запустить удаление ссылки с сервера админа"""
-			temp_id, plan = temp_links.pop(code) 
-
-			admin_server_id = database_manager.get_user_server_id(ADMIN_ID)
-
-
-
-			delete_users_link(temp_id)
-			db.create_subscription(user_id, DAYS[plan])
+		if code in temp_codes:
+			""" Если код верен, создаем пользователю подписку с его планом"""
+			plan = temp_codes[code] 
+			task_manager.set_task(create_subscription, user_id, plan)
 			send_temp_message(bot, user_id, '✅ Код активирован.', 30)
-			vless_url = create_user(user_id)
-			send_qr_and_link(user_id, vless_url)
 		else:
 			send_temp_message(bot, user_id, '❌ Неверный код!', 30)
 
@@ -312,37 +262,36 @@ def router(message):
 			bot.send_message(user_id, "Выберите тариф", reply_markup=buy_keyboard())
 		else:
 			send_temp_message(bot, user_id, "💤 Администратор спит, поппробуйте позже")
+		return
 
 	if text == STATUS_BUTTON:
-		paid_days = database_manager.get_paid_days(user_id)
-		location_id = database_manager.get_user_server_id(user_id)
-		country_conf = server_manager.get_country_by_server_id(location_id)
-		if not is_admin(user_id):
-			if paid_days > 0:
-				bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
-			else:
-				bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
-		else:
-			bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
+		status_handler(message)
+		return
 	
 	if text == LOCATION_BUTTON:
 		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())
+		return
 
 	if text == REF_BUTTON:
 		ref_handler(message)
+		return
 	
 	if text == HELP_BUTTON:
 		help_handler(message)
+		return
 
 	if text == STATISTIC_BUTTON:
 		bot.send_message(user_id, "В разработке")
+		return
 
 	if text == AMDINS_LINK_BUTTON:
 		bot.send_message(user_id, "В разработке")
+		return
 
 	if text == TEMP_LINK_BUTTON:
 		if is_admin(user_id):
-			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())		
+			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())	
+		return	
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
@@ -371,10 +320,6 @@ def callback(call):
 		
 		if data.startswith('reject:'):
 			show_reject(call)
-			return
-		
-		if data == 'qr':
-			qr_handler(call)
 			return
 		
 		if data == 'link':

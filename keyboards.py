@@ -82,7 +82,6 @@ def temp_link_keyboard():
 def status_keyboard():
 	markup = types.InlineKeyboardMarkup()
 	markup.add(types.InlineKeyboardButton("🔗 Ссылка", callback_data="link"))
-	markup.add(types.InlineKeyboardButton("🔳 QR", callback_data="qr"))
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
 

@@ -6,6 +6,7 @@ from datetime import datetime, timezone, time
 
 from config import ADMIN_ID
 
+temp_codes = {}
 
 def is_work_time():
     now = datetime.now(timezone.utc).time()
@@ -15,6 +16,7 @@ def is_work_time():
 
     return now >= start or now < end
 
+
 def qrcode_generate(url):
 	img = qrcode.make(url)
 	buffer = BytesIO()
@@ -22,8 +24,10 @@ def qrcode_generate(url):
 	buffer.seek(0)
 	return buffer
 
+
 def is_admin(user_id):
 	return user_id == ADMIN_ID 
+
 
 def generate_secure_code(n):
 	return ''.join(__import__('secrets').choice('0123456789') for _ in range(n))
@@ -34,6 +38,7 @@ def _schedule_delete(callback, seconds):
 	timer.daemon = True
 	timer.start()
 	return timer
+
 
 def send_temp_photo(bot, chat_id, buffer, seconds=30, **kwargs):
 	try:
@@ -65,11 +70,11 @@ def send_temp_message(bot, chat_id, text, seconds=30, **kwargs):
 		logger.error(f'Ошибка при отправке временного сообщения: {e}')
 
 
-def temp_code_deleter(dict, key, value, seconds=3600):
-	dict[key] = value
+def temp_code_deleter(key, value, seconds=3600):
+	temp_codes[key] = value
 	def delete():
 		try:
-			dict.pop(key, None)
+			temp_codes.pop(key, None)
 		except Exception as e:
 			logger.error(f'Ошибка удаления из словаря: {e}')
 
