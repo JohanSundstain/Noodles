@@ -1,7 +1,7 @@
 import re
 import subprocess
 
-from utils import logger, is_admin, is_owner
+from .help_func import logger, is_admin, is_owner
 from cache import user_index_cache
 
 # ------------------------
