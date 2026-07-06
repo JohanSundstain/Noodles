@@ -1,4 +1,5 @@
 local_secrets.py
 *.db
 *.log
-__pycache__/*
+__pycache__/
+*.py[cod
