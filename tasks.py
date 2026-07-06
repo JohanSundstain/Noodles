@@ -129,7 +129,7 @@ def create_temp_link(call):
 		vless_url = answer['link']
 		code = generate_secure_code(6)
 		# TODO ИЗМЕНИТЬ ВРЕМЯ
-		temp_code_deleter(code, plan, 300)
+		temp_code_deleter(code, int(plan), 300)
 		buffer = qrcode_generate(vless_url)
 		send_temp_photo(bot, ADMIN_ID, buffer, 120, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
 		send_temp_message(bot, ADMIN_ID, f"Код: <code>{code}</code>", 120, parse_mode="HTML")
