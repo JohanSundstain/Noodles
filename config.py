@@ -1,12 +1,15 @@
 import os
-from local_secrets import token, admin_id, owner_id, number, api_key
+from debug_secrets import (
+	token, admin_id, 
+	owner_id, number,
+	api_key, bot_name)
 
 TOKEN = token
 ADMIN_ID = admin_id
 OWNER_ID = owner_id
 NUMBER = number
 BONUS = 30
-BOT_LINK = 't.me/JohanNoodles_bot'
+BOT_LINK = f't.me/{bot_name}'
 API_TOKEN = api_key
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///bot.db')

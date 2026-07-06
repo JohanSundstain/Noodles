@@ -1,4 +1,5 @@
 local_secrets.py
+debug_secrets.py
 *.db
 *.log
 __pycache__/
