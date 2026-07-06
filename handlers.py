@@ -280,6 +280,13 @@ def handle_all_command(message):
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
 
 
+@bot.message_handler(commands=['test'])
+def handle_all_command(message):
+	user_id = message.from_user.id
+	if is_owner(user_id):
+		from temp import func
+		func()
+
 
 @bot.message_handler(func=lambda m: True)
 def router(message):

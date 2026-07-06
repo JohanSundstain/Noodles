@@ -4,7 +4,7 @@ import qrcode
 from logger import logger
 from datetime import datetime, timezone, time
 
-from config import ADMIN_ID
+from config import ADMIN_ID,OWNER_ID
 
 temp_codes = {}
 
@@ -30,7 +30,7 @@ def is_admin(user_id):
 
 
 def is_owner(user_id):
-	return user_id == ADMIN_ID 
+	return user_id == OWNER_ID 
 
 
 def generate_secure_code(n):
