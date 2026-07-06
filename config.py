@@ -1,5 +1,5 @@
 import os
-from debug_secrets import (
+from local_secrets import (
 	api_key,
 	admin_id,
 	owner_id
