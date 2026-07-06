@@ -6,6 +6,7 @@ from .telegram_helpers import (
     send_temp_photo,
     send_temp_message,
 	is_admin,
+	is_owner,
 	is_work_time,
 	temp_code_deleter,
 	temp_codes
@@ -23,6 +24,7 @@ __all__ = [
     'send_temp_photo',
     'send_temp_message',
 	'is_admin',
+	'is_owner',
 	'is_work_time',
 	'temp_code_deleter'
 	'temp_codes'

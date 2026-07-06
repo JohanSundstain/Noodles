@@ -33,6 +33,7 @@ from utils import (
 	send_temp_message,
 	temp_code_deleter,
 	is_admin,
+	is_owner,
 	is_work_time,
 	temp_codes
 )
@@ -260,19 +261,19 @@ def handle_all_command(message):
 	try:
 		parts = message.text.split()
 		user_id = message.from_user.id
+		if is_owner(user_id) or is_admin(user_id):
+			if len(parts) < 2:
+				warning = (
+					'❌ Вы не ввели сообщение!\n'
+					'<br>📝 Использование</br>: <code>/all СООБЩЕНИЕ</code>\n'
+					'<br>Пример</br>: <code>/all Всем привет!</code>'
+				)
+				send_temp_message(bot, user_id, warning, 30, parse_mode='HTML')
+				return
 
-		if len(parts) < 2:
-			warning = (
-				'❌ Вы не ввели сообщение!\n'
-				'<br>📝 Использование</br>: <code>/all СООБЩЕНИЕ</code>\n'
-				'<br>Пример</br>: <code>/all Всем привет!</code>'
-			)
-			send_temp_message(bot, user_id, warning, 30, parse_mode='HTML')
-			return
+			all_message = " ".join(parts[1:])
 
-		all_message = " ".join(parts[1:])
-
-		task_manager.set_task(broadcast, all_message)
+			task_manager.set_task(broadcast, all_message)
 
 	except Exception as e:
 		logger.error(f'Ошибка: {e}')

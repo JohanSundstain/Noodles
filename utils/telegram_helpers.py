@@ -29,6 +29,10 @@ def is_admin(user_id):
 	return user_id == ADMIN_ID 
 
 
+def is_owner(user_id):
+	return user_id == ADMIN_ID 
+
+
 def generate_secure_code(n):
 	return ''.join(__import__('secrets').choice('0123456789') for _ in range(n))
 
