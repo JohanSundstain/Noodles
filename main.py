@@ -11,12 +11,12 @@ from utils import (
 	create_external_user,
 	load_user_link,
 	remove_external_user,
-	logger,
 	is_admin,
 	is_owner,
 	generate_secure_code
 )
 
+from logger import logger
 from cache import user_index_cache
 
 app = FastAPI()

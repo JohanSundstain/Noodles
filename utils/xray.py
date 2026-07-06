@@ -1,13 +1,23 @@
 import re
 import subprocess
+from config import ADMIN_ID, OWNER_ID
 
-from .help_func import is_admin, is_owner
-from .logger import logger
+
+from logger import logger
 from cache import user_index_cache
 
 # ------------------------
 # CORE LOGIC
 # ------------------------
+
+def generate_secure_code(n : int) -> int:
+	return int(''.join(__import__('secrets').choice('0123456789') for _ in range(n)))
+
+def is_admin(user_id):
+	return user_id == ADMIN_ID
+
+def is_owner(user_id):
+	return user_id == OWNER_ID
 
 def load_user_dict():
 	"""Загружает список пользователей из системы и строит словарь {uid: index}."""
@@ -117,3 +127,4 @@ def remove_external_user(user_index):
 	except Exception as e:
 		logger.error(f'rmuser error {user_index}: {e}')
 		return False
+	
