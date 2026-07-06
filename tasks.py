@@ -115,6 +115,10 @@ def create_temp_link(call):
 	plan = call.data.split(":")[1]
 	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
 
+	if admin_server_id == 'none': # админ не выбрал локацию
+		send_temp_message(bot, ADMIN_ID, "❌ Не выбрана локация.", 30)
+		return 
+	
 	api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
 
 	# TODO ИЗМЕНИТЬ ВРЕМЯ
