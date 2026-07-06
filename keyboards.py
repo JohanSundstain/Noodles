@@ -27,7 +27,7 @@ def admin_menu_keyboard():
 		is_persistent=True
 	)
 	markup.row(types.KeyboardButton(TEMP_LINK_BUTTON),types.KeyboardButton(LOCATION_BUTTON))
-	markup.row(types.KeyboardButton(STATISTIC_BUTTON), types.KeyboardButton(STATISTIC_BUTTON))
+	markup.row(types.KeyboardButton(STATISTIC_BUTTON), types.KeyboardButton(STATUS_BUTTON))
 	markup.row(types.KeyboardButton(HELP_BUTTON))
 	return markup
 
