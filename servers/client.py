@@ -92,7 +92,7 @@ class APIClient:
 	# ------------------------
 	def get_temp_link(self, user_id: int, seconds: int = 3600):
 		try:
-			response = self.session.get(
+			response = self.session.post(
 				f"{self.base_url}/user/temp_link",
 				json={
 					"user_id": user_id,
