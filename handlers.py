@@ -49,6 +49,10 @@ from config import (
 	BONUS)
 
 
+# ---------------
+# USER HANDLERS
+#-----------------
+
 user_plan = {} # юзер id: выбранный им план 
 
 def cancel_handler(call):
@@ -170,7 +174,7 @@ def start(message):
 	database_manager.create_new_user(user_id, referrer)
 
 	try:
-		if user_id == ADMIN_ID:
+		if is_admin(user_id):
 			keyboard = admin_menu_keyboard()
 		else:
 			keyboard = user_menu_keyboard()
@@ -252,6 +256,10 @@ def handle_code_command(message):
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
 
 
+# ---------------
+# ADMINS HANDLERS
+#-----------------
+
 @bot.message_handler(commands=['all'])
 def handle_all_command(message):
 	try:
@@ -277,12 +285,13 @@ def handle_all_command(message):
 
 
 @bot.message_handler(commands=['info'])
-def handle_inf_command(message):
+def handle_info_command(message):
 	
-	from owner_funcs import get_info
+	from admin_funcs import get_info
 
 	parts = message.text.split()
 	user_id = int(parts[1])
+
 	if is_owner(message.from_user.id):
 		task_manager.set_task(get_info, user_id)
 
@@ -290,7 +299,7 @@ def handle_inf_command(message):
 @bot.message_handler(commands=['switch'])
 def handle_switch_command(message):
 	
-	from owner_funcs import set_server
+	from admin_funcs import set_server
 
 	parts = message.text.split()
 	user_id = int(parts[1])
@@ -302,17 +311,25 @@ def handle_switch_command(message):
 @bot.message_handler(commands=['reduce'])
 def handle_reduce_command(message):
 	
-	from owner_funcs import reduce_days
+	from admin_funcs import reduce_days
 
 	parts = message.text.split()
 	user_id = int(parts[1])
 	days = int(parts[2])
 	if is_owner(message.from_user.id):
 		task_manager.set_task(reduce_days, user_id, days)
+
+@bot.message_handler(commands=['load'])
+def handle_load_command(message):
+	
+	from admin_funcs import server_load
+
+	parts = message.text.split()
+	server_id = parts[1]
+	if is_owner(message.from_user.id):
+		task_manager.set_task(server_load, server_id)
 	
 
-
-	
 
 @bot.message_handler(func=lambda m: True)
 def router(message):
@@ -387,3 +404,5 @@ def callback(call):
 		
 	except Exception as e:
 		logger.error(f'Ошибка в callback: {e}')
+
+

@@ -2,6 +2,7 @@ import time
 
 from logger import logger
 from bot import bot
+
 from scheduler import start_scheduler
 
 if __name__ == '__main__':

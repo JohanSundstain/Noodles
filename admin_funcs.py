@@ -56,3 +56,8 @@ def reduce_days(user_id, days):
 		send_temp_message(bot, OWNER_ID, f"failed: {prev_days}->{new_days}", 30)
 	else:
 		send_temp_message(bot, OWNER_ID, f"success: {prev_days}->{new_days}", 30)
+
+def server_load(server_id):
+	server_load = database_manager.get_servers_load([server_id])
+	send_temp_message(bot, OWNER_ID, f"{server_load}", 30)
+	

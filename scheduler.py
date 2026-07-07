@@ -3,9 +3,9 @@ import time
 import threading
 
 from logger import logger
-import handlers
 
 from database import database_manager
+import handlers
 
 
 def run_schedule():
