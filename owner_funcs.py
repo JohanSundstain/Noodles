@@ -16,3 +16,10 @@ def get_user_info(user_id):
 	server_id = database_manager.get_user_server_id(user_id)
 	paid_days =	database_manager.get_paid_days(user_id)
 	return server_id, paid_days
+
+
+def set_server(user_id, server_id):
+	database_manager.update_user_server(user_id, server_id)
+	new_server_id = database_manager.get_user_server_id(user_id)
+	return new_server_id == server_id
+		

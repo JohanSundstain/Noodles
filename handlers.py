@@ -279,7 +279,7 @@ def handle_all_command(message):
 @bot.message_handler(commands=['info'])
 def handle_all_command(message):
 	
-	from owner_funcs import func, get_user_info
+	from owner_funcs import get_user_info
 
 	parts = message.text.split()
 	user_id = int(parts[1])
@@ -288,6 +288,20 @@ def handle_all_command(message):
 		serv_id, paid_days = get_user_info(user_id)
 		send_temp_message(bot, OWNER_ID, f"server ID: {serv_id}\nPlan: {paid_days}", 30)
 
+@bot.message_handler(commands=['switch'])
+def handle_all_command(message):
+	
+	from owner_funcs import set_server
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	serv_id = parts[2]
+	if is_owner(message.from_user.id):
+		if (set_server(user_id, serv_id)):
+			send_temp_message(bot, OWNER_ID, f"success: {user_id}", 30)
+		else:
+			send_temp_message(bot, OWNER_ID, f"failed: {user_id}", 30)
+	
 
 @bot.message_handler(func=lambda m: True)
 def router(message):
