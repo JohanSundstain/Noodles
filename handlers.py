@@ -283,7 +283,7 @@ def handle_all_command(message):
 
 	parts = message.text.split()
 	user_id = int(parts[1])
-	if is_owner(user_id):
+	if is_owner(message.from_user.id):
 		send_temp_message(bot, OWNER_ID, f"getting user info: {user_id}", 30)
 		serv_id, paid_days = get_user_info(user_id)
 		send_temp_message(bot, OWNER_ID, f"server ID: {serv_id}\nPlan: {paid_days}", 30)
