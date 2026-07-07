@@ -200,7 +200,7 @@ def send_user_stat(user_id):
 	location_id = database_manager.get_user_server_id(user_id)
 	country_conf = server_manager.get_country_by_server_id(location_id)
 	if is_admin(user_id) or is_owner(user_id):
-		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
+		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}\nВаш ID: {user_id}", reply_markup=status_keyboard())
 	else:
 		if paid_days > 0:
 			bot.send_message(user_id, 
