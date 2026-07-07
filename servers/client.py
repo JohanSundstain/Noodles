@@ -58,7 +58,7 @@ class APIClient:
 	# ------------------------
 	def user_exists(self, user_id: int):
 		try:
-			response = self.session.post(
+			response = self.session.get(
 				f"{self.base_url}/user/{user_id}/exists",
 				timeout=10
 			)
