@@ -203,6 +203,8 @@ def send_user_stat(user_id):
 		bot.send_message(user_id, f"Локация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
 	else:
 		if paid_days > 0:
-			bot.send_message(user_id, f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}", reply_markup=status_keyboard())
+			bot.send_message(user_id, 
+				f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}\nВаш ID: {user_id}",
+				reply_markup=status_keyboard())
 		else:
-			bot.send_message(user_id, "У вас нет активной подписки", reply_markup=cancel_keyboard())
+			bot.send_message(user_id, f"У вас нет активной подписки\nВаш ID: {user_id}", reply_markup=cancel_keyboard())
