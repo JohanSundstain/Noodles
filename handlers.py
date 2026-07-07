@@ -129,7 +129,7 @@ def approved_handler(call):
 	plan = int(data[2])
 
 	send_temp_message(bot, call.from_user.id, '⏳ Запрос обрабатывается...', 30)
-	task_manager.set_task(create_subscription, user_id, plan)
+	task_manager.set_task(create_subscription, user_id=user_id, plan=plan, call=call)
 	
 
 def show_reject(call):
@@ -235,7 +235,7 @@ def handle_code_command(message):
 		if code in temp_codes:
 			""" Если код верен, создаем пользователю подписку с его планом"""
 			plan = temp_codes.pop(code, None)
-			task_manager.set_task(create_subscription, user_id, plan)
+			task_manager.set_task(create_subscription, user_id=user_id, plan=plan)
 			send_temp_message(bot, user_id, '✅ Код активирован.', 30, reply_markup=user_menu_keyboard())
 		else:
 			send_temp_message(bot, user_id, '❌ Неверный код!', 30, reply_markup=user_menu_keyboard())

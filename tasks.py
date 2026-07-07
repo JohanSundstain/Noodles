@@ -144,7 +144,8 @@ def get_and_send_link(call):
 		logger.error(f"Ошибка получения ссылки от сервера {answer['details']}")
 
 
-def create_subscription(user_id, plan):
+def create_subscription(user_id=None, plan=None, call=None):
+
 	result = database_manager.create_subscription(user_id, DAYS[plan])
 
 	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 120)
@@ -159,6 +160,13 @@ def create_subscription(user_id, plan):
 	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
 
 	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
+
+	if call is not None:
+		message_id = call.message.message_id
+		text = f"""✅ ПОДТВЕРЖДЕНО\n
+		<b>ID: <code>{user_id}</code></b>
+		<b>Plan: <code>{DAYS[plan]}</code></b>"""
+		bot.edit_message_caption(text, ADMIN_ID, message_id, parse_mode="HTML")
 
 
 def create_temp_link(call):
