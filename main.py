@@ -8,12 +8,14 @@ from pydantic import BaseModel
 
 from utils import (
 	get_user_index,
+	get_user_index_str,
 	create_external_user,
 	load_user_link,
 	remove_external_user,
 	is_admin,
 	is_owner,
-	generate_secure_code
+	generate_secure_code,
+	create_temp_user
 )
 
 from logger import logger
@@ -101,15 +103,15 @@ def get_temp_link(req: ScheduleRequest, _=Security(verify_api_key)):
 	if is_admin(user_id) or is_owner(user_id):
 		with write_lock:
 			try:
-				temp_index = generate_secure_code(8)
-				url = create_external_user(temp_index)	
+				temp_name = 't'+generate_secure_code(8)
+				url = create_temp_user(temp_name)	
 				if not url:
 					return {"status": "failed", "details":"could not create temp user"}
 				else:
 					def delete():
 						with write_lock:
 							try:
-								link_index = get_user_index(temp_index)
+								link_index = get_user_index_str(temp_name)
 								remove_external_user(link_index)
 							except Exception as e:
 								logger.error(f"scheduled delete error: {e}")

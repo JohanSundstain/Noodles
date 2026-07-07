@@ -11,7 +11,7 @@ from cache import user_index_cache
 # ------------------------
 
 def generate_secure_code(n : int) -> int:
-	return int(''.join(__import__('secrets').choice('0123456789') for _ in range(n)))
+	return ''.join(__import__('secrets').choice('0123456789') for _ in range(n))
 
 def is_admin(user_id):
 	return user_id == ADMIN_ID
@@ -41,6 +41,9 @@ def load_user_dict():
 def get_user_index(user_id):
 	"""Возвращает индекс пользователя в системе (из кэша или утилиты)."""
 	return user_index_cache.get(str(user_id), load_user_dict)
+
+def get_user_index_str(user_id_str):
+	return user_index_cache.get(user_id_str, load_user_dict)
 
 
 def load_user_link(user_id):
@@ -73,6 +76,35 @@ def load_user_link(user_id):
 	except Exception as e:
 		# Безопасный лог через user_id во избежание UnboundLocalError
 		logger.error(f'sharelink error for user {user_id}: {e}')
+		return None
+
+
+def create_temp_user(user_id_str):
+	"""Создает временного пользователя в системе."""
+	try:
+		# Приведение к str для консистентности с get_user_index
+		if user_index_cache.is_cached(user_id_str):
+			logger.error(f'Пользователь {user_id_str} уже существует в кэше')
+			return None
+		
+		result = subprocess.run(
+			['newuser'],
+			input=f'{user_id_str}\n',
+			capture_output=True,
+			text=True,
+			encoding='utf-8',
+			timeout=10
+		)
+
+		if result.returncode != 0:
+			logger.error(f'newuser failed for {user_id_str}: {result.stderr or result.stdout}')
+			return None
+
+		url = re.search(r'vless://[^\s]+', result.stdout or "")
+		return url.group() if url else None
+
+	except Exception as e:
+		logger.error(f'newuser error {user_id_str}: {e}')
 		return None
 
 
