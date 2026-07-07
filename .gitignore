@@ -1,6 +1,8 @@
 local_secrets.py
 debug_secrets.py
 *.db
+*.db-shm
+*.db-wal
 *.log
 __pycache__/
 *.py[cod
