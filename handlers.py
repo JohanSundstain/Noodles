@@ -297,10 +297,8 @@ def handle_all_command(message):
 	user_id = int(parts[1])
 	serv_id = parts[2]
 	if is_owner(message.from_user.id):
-		if (set_server(user_id, serv_id)):
-			send_temp_message(bot, OWNER_ID, f"success: {user_id}", 30)
-		else:
-			send_temp_message(bot, OWNER_ID, f"failed: {user_id}", 30)
+		task_manager.set_task(set_server, user_id, serv_id)
+		
 	
 
 @bot.message_handler(func=lambda m: True)
@@ -339,8 +337,6 @@ def router(message):
 		if is_admin(user_id):
 			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())	
 		return	
-
-
 
 
 @bot.callback_query_handler(func=lambda call: True)

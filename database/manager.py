@@ -72,6 +72,15 @@ class DatabaseManager(DatabaseConnection):
 			)
 			
 			return list(expired_users)
+		
+	def decrease_days(self, user_id: int, days: int):
+		with self.session_scope() as session:
+			
+			session.execute(
+				update(User)
+				.where(User.user_id == user_id)
+				.values(paid_days=User.paid_days - days)
+			)
 
 	# --- Твоя новая логика балансировки ---
 	def get_servers_load(self, server_ids: list[str]) -> dict[str, int]:
