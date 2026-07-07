@@ -276,12 +276,15 @@ def handle_all_command(message):
 		bot.send_message(message.from_user.id, '⚠️ Ошибка обработки кода')
 
 
-@bot.message_handler(commands=['admin'])
+@bot.message_handler(commands=['info'])
 def handle_all_command(message):
-	user_id = message.from_user.id
+	from owner_funcs import func, get_user_info
+
+	parts = message.text.split()
+	user_id = int(parts[1])
 	if is_owner(user_id):
-		from owner_funcs import func
-		func()
+		serv_id, paid_days = get_user_info(user_id)
+		send_temp_message(bot, OWNER_ID, f"server ID: {serv_id}\nPlan: {paid_days}", 30)
 
 
 @bot.message_handler(func=lambda m: True)

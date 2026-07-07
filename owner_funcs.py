@@ -11,3 +11,8 @@ def func():
 		if id == 'fi-1':	
 			time.sleep(1)
 			api.create_user(user_id)
+
+def get_user_info(user_id):
+	server_id = database_manager.get_user_server_id(user_id)
+	paid_days =	database_manager.get_paid_days(user_id)
+	return server_id, paid_days
