@@ -21,10 +21,10 @@ def func():
 			api.create_user(user_id)
 
 
-def get_user_info(user_id):
+def get_info(user_id):
 	server_id = database_manager.get_user_server_id(user_id)
 	paid_days =	database_manager.get_paid_days(user_id)
-	return server_id, paid_days
+	send_temp_message(bot, OWNER_ID, f"server ID: {server_id}\nPlan: {paid_days}", 30)
 
 
 def set_server(user_id, server_id):

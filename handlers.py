@@ -277,19 +277,18 @@ def handle_all_command(message):
 
 
 @bot.message_handler(commands=['info'])
-def handle_all_command(message):
+def handle_inf_command(message):
 	
-	from owner_funcs import get_user_info
+	from owner_funcs import get_info
 
 	parts = message.text.split()
 	user_id = int(parts[1])
 	if is_owner(message.from_user.id):
-		send_temp_message(bot, OWNER_ID, f"getting user info: {user_id}", 30)
-		serv_id, paid_days = get_user_info(user_id)
-		send_temp_message(bot, OWNER_ID, f"server ID: {serv_id}\nPlan: {paid_days}", 30)
+		task_manager.set_task(get_info, user_id)
+
 
 @bot.message_handler(commands=['switch'])
-def handle_all_command(message):
+def handle_switch_command(message):
 	
 	from owner_funcs import set_server
 
@@ -299,6 +298,20 @@ def handle_all_command(message):
 	if is_owner(message.from_user.id):
 		task_manager.set_task(set_server, user_id, serv_id)
 		
+
+@bot.message_handler(commands=['reduce'])
+def handle_reduce_command(message):
+	
+	from owner_funcs import reduce_days
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	days = int(parts[2])
+	if is_owner(message.from_user.id):
+		task_manager.set_task(reduce_days, user_id, days)
+	
+
+
 	
 
 @bot.message_handler(func=lambda m: True)
