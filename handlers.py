@@ -306,6 +306,17 @@ def handle_switch_command(message):
 	serv_id = parts[2]
 	if is_owner(message.from_user.id):
 		task_manager.set_task(set_server, user_id, serv_id)
+
+@bot.message_handler(commands=['check'])
+def handle_switch_command(message):
+	
+	from admin_funcs import is_on_server
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	serv_id = parts[2]
+	if is_owner(message.from_user.id):
+		task_manager.set_task(is_on_server, user_id, serv_id)
 		
 
 @bot.message_handler(commands=['reduce'])

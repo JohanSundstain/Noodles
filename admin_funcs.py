@@ -30,8 +30,16 @@ def get_info(user_id):
 	if answer["exists"]:
 		is_on_server = "true"
 	
-	send_temp_message(bot, OWNER_ID, f"server ID: {server_id}\nPlan: {paid_days}\nis on server: {is_on_server}", 30)
+	send_temp_message(bot, OWNER_ID, f"server ID: {server_id}\nPlan: {paid_days}", 30)
 
+def is_on_server(user_id, server_id):
+	api_client = server_manager.get_api_server(server_id)
+	answer = api_client.user_exists(user_id)
+	is_on_server = 'false'
+	if answer["exists"]:
+		is_on_server = 'true'
+
+	send_temp_message(bot, OWNER_ID, f"server ID: {server_id}\nis on server: {is_on_server}", 30)
 
 def set_server(user_id, server_id):
 	old_server_id = database_manager.get_user_server_id(user_id)
