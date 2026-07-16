@@ -61,3 +61,8 @@ class ServerInterface:
 			if server.id == server_id),
 			None
 		)
+	
+	def get_all_server_id(self) -> list[str]:
+		return [server.id 
+			for config in self._contries.values()
+			for server in config.servers]

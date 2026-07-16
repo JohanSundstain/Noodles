@@ -12,7 +12,8 @@ from tasks import (
 	get_and_send_link,
 	create_temp_link,
 	send_user_stat,
-	broadcast
+	broadcast,
+	send_statistic
 )
 
 from keyboards import (
@@ -27,11 +28,7 @@ from keyboards import (
 )
 from logger import logger
 from utils import (
-	qrcode_generate,
-	generate_secure_code,
-	send_temp_photo,
 	send_temp_message,
-	temp_code_deleter,
 	is_admin,
 	is_owner,
 	is_work_time,
@@ -68,6 +65,10 @@ def country_handler(call):
 def link_handler(call):
 	bot.answer_callback_query(call.id)
 	task_manager.set_task(get_and_send_link, call)
+
+
+def statistic_handler(message):
+	task_manager.set_task(send_statistic, message) 
 
 
 def ref_handler(message):
@@ -359,7 +360,7 @@ def router(message):
 		return
 	
 	if text == LOCATION_BUTTON:
-		bot.send_message(user_id, "Выберите локацию", reply_markup=country_keyboard())
+		bot.send_message(user_id, "Выберите основную локацию", reply_markup=country_keyboard())
 		return
 
 	if text == REF_BUTTON:
@@ -371,7 +372,7 @@ def router(message):
 		return
 
 	if text == STATISTIC_BUTTON:
-		bot.send_message(user_id, "В разработке")
+		statistic_handler(message)
 		return
 
 	if text == TEMP_LINK_BUTTON:
@@ -392,6 +393,10 @@ def callback(call):
 		if data.startswith('country:'):
 			country_handler(call)
 			return
+		
+		if data.startswith('backup_country:'):
+			country_handler(call)
+			return
 
 		if data.startswith('plan:'):
 			plan_handler(call)
@@ -409,7 +414,7 @@ def callback(call):
 			show_reject(call)
 			return
 		
-		if data == 'link':
+		if data.startswith('link:'):
 			link_handler(call)
 			return
 		

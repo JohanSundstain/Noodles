@@ -42,15 +42,15 @@ class DatabaseConnection:
 		with self.SessionLocal() as session:
 			try:
 				# Проверяем, существует ли уже колонка current_server
-				session.execute(text("SELECT current_server FROM users LIMIT 1"))
+				session.execute(text("SELECT backup_server FROM users LIMIT 1"))
 			except Exception:
 				# Если упало с ошибкой — значит колонки нет, добавляем её!
-				logger.info("Старая БД обнаружена. Добавляю колонку current_server...")
+				logger.info("Старая БД обнаружена. Добавляю колонку backup_server...")
 				try:
-					# ALTER TABLE добавляет колонку и сразу ставит всем старым юзерам 'de-1'
-					session.execute(text("ALTER TABLE users ADD COLUMN current_server TEXT NOT NULL DEFAULT 'fi-1'"))
+					# ALTER TABLE добавляет колонку и сразу ставит всем старым юзерам 'fi-1'
+					session.execute(text("ALTER TABLE users ADD COLUMN backup_server TEXT NOT NULL DEFAULT 'none'"))
 					# Также создаем индекс для этой колонки, так как Base.metadata его не создаст на существующей таблице
-					session.execute(text("CREATE INDEX IF NOT EXISTS idx_user_server ON users(current_server)"))
+					session.execute(text("CREATE INDEX IF NOT EXISTS idx_user_server ON users(backup_server)"))
 					session.commit()
 					logger.info("Миграция базы данных успешно завершена!")
 				except Exception as e:

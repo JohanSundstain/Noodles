@@ -51,15 +51,20 @@ def owner_meny_keyboard():
 ######################
 
 
-def country_keyboard():
+def country_keyboard(main_country=None):
 	markup = types.InlineKeyboardMarkup()
 	COUNTRIES = server_manager.get_contries()
 	for country in COUNTRIES:
+		if country == main_country:
+			continue
 		if country != "UNKNOWN":
-			markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}"))
+			if main_country is None:
+				markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}:main"))
+			else:
+				markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}:backup"))
+
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
-  
 	
 def buy_keyboard():
 	markup = types.InlineKeyboardMarkup()
@@ -80,9 +85,11 @@ def temp_link_keyboard():
 
 def status_keyboard():
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("🔗 Ссылка", callback_data="link"))
+	markup.add(types.InlineKeyboardButton("🔗 Основная  ссылка", callback_data="link:main"))
+	markup.add(types.InlineKeyboardButton("🔗 Резервная ссылка", callback_data="link:backup"))
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
+
 
 def admin_approve_reject_keyboard(user_id, plan):
 	markup = types.InlineKeyboardMarkup()
