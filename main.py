@@ -67,6 +67,8 @@ class ScheduleRequest(BaseModel):
 	user_id: int
 	seconds: int = 3600
 
+class UsersRequest(BaseModel):
+	user_ids: list[int]
 
 # ------------------------
 # API (Защищенные эндпоинты)
@@ -167,9 +169,37 @@ def delete_user(req: DeleteRequest, _=Security(verify_api_key)):
 			raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/users")
+def delete_several_user(req: UsersRequest, _=Security(verify_api_key)):
+	user_ids = req.user_ids
+	deleted = []
+	failed = []
+	not_found = []
+	with write_lock:
+		try:
+			for user_id in user_ids:
+				user_index = get_user_index(user_id)
+				if user_index:
+					if remove_external_user(user_index):
+						deleted.append(user_id)
+					else:
+						failed.append(user_id)
+				else:
+					not_found.append(user_id)
+
+			user_index_cache.invalidate()
+			
+			return {"deleted": deleted, "failed" : failed, "not_found": not_found}
+			
+		except HTTPException:
+			raise
+		except Exception as e:
+			logger.exception("delete_user crashed")
+			raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/user/schedule-delete")
 def schedule_delete(req: ScheduleRequest, _=Security(verify_api_key)):
-
 	def delete():
 		with write_lock:
 			try:
