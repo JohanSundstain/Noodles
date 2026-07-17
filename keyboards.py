@@ -54,6 +54,7 @@ def owner_meny_keyboard():
 def country_keyboard(main_country=None):
 	markup = types.InlineKeyboardMarkup()
 	COUNTRIES = server_manager.get_contries()
+	
 	for country in COUNTRIES:
 		if country == main_country:
 			continue

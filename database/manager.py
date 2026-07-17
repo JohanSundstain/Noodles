@@ -78,6 +78,12 @@ class DatabaseManager(DatabaseConnection):
 				select(User.user_id).where(User.paid_days == 1)
 			).all()
 
+			session.execute(
+				update(User)
+				.where(User.paid_days == 1)
+				.values(current_server='none', backup_server='none')
+			)
+
 			# 2. Уменьшаем дни одним эффективным SQL-запросом ко всем сразу
 			session.execute(
 				update(User)

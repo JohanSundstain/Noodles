@@ -18,16 +18,16 @@ def run_schedule():
 
 def daily_job():
 	expired_users = set(database_manager.bulk_decrease_days())
-	logger.info(f"Осталься один день у {expired_users} польз.")
+	logger.info(f"Осталься один день у {list(expired_users)} польз.")
 
 	"""Удаляем ссылки тех, у кого закончилась подписка"""
 	deletion_dict = {}
-	for user_id in expired_users:	
+	for user_id in list(expired_users):	
 		"""Все остальные сервера"""
 
 		bot.send_message(user_id, "⚠️ У вас закончилась подписка!")
 
-		all_servers = set(server_manager.get_all_server_id())
+		all_servers = server_manager.get_all_server_id()
 
 		for server_id in all_servers:
 			if server_id != 'none':
@@ -36,44 +36,14 @@ def daily_job():
 				else:
 					deletion_dict[server_id] = [user_id]
 
-		for key, value in deletion_dict.items():
-			try:
-				api_client = server_manager.get_api_server(key)
-				result = api_client.delete_users(value)
-				logger.info(f"server: {key}\ndeleted: {result['deleted']}\nfailed: {result['failed']}\nnot found: {result['not found']}")
-			except Exception as e:
-				logger.error(f"Ошибка создания запроса на удаление нескольких пользователей")
-
-	"""Удаляем неиспользуеммые ссылки у пользователей"""
-	used_servers = set()
-	all_user_ids = set(database_manager.get_all_user_ids())
-	remaining_users = all_user_ids - expired_users
-	deletion_dict = {}
-	for user_id in remaining_users:
-		used_servers = set()
-		"""Ссылки пользователей текущие"""
-		used_servers.add(database_manager.get_user_server_id(user_id))
-		used_servers.add(database_manager.get_user_server_id(user_id, main=False))
-
-		"""Все остальные сервера"""
-		all_servers = set(server_manager.get_all_server_id())
-
-		"""Неиспользуемые сервера"""
-		unused_servers = all_servers - used_servers
-		for server_id in unused_servers:
-			if server_id != 'none':
-				if server_id in deletion_dict:
-					deletion_dict[server_id].append(user_id)
-				else:
-					deletion_dict[server_id] = [user_id]
-
-		for key, value in deletion_dict.items():
-			try:
-				api_client = server_manager.get_api_server(key)
-				result = api_client.delete_users(value)
-				logger.info(f"server: {key}\ndeleted: {result['deleted']}\nfailed: {result['failed']}\nnot found: {result['not found']}")
-			except Exception as e:
-				logger.error(f"Ошибка создания запроса на удаление нескольких пользователей")
+	for key, value in deletion_dict.items():
+		try:
+			api_client = server_manager.get_api_server(key)
+			result = api_client.delete_users(value)
+			logger.info(f"=====SERVER ID===== {key}")
+			logger.info(f"deleted: {result['deleted']}\nfailed: {result['failed']}\nnot found: {result['not_found']}")
+		except Exception as e:
+			logger.error(f"Ошибка создания запроса на удаление нескольких пользователей: {e}")
 
 
 def start_scheduler():

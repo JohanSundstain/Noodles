@@ -349,8 +349,22 @@ def handle_load_command(message):
 	if is_owner(message.from_user.id):
 		run_daily()
 		#task_manager.set_task(run_daily)
-	
 
+
+@bot.message_handler(commands=['create'])
+def handle_load_command(message):
+	
+	from admin_funcs import create
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	server_id = parts[2]
+	type = parts[3]
+	main = True if type == 'main' else False
+	if is_owner(message.from_user.id):
+		task_manager.set_task(create, user_id, server_id, main)
+	
+	
 @bot.message_handler(func=lambda m: True)
 def router(message):
 	text = message.text
@@ -368,7 +382,7 @@ def router(message):
 		return
 	
 	if text == LOCATION_BUTTON:
-		bot.send_message(user_id, "Выберите основную локацию", reply_markup=country_keyboard())
+		bot.send_message(user_id, "✈️ Выберите основную локацию", reply_markup=country_keyboard())
 		return
 
 	if text == REF_BUTTON:

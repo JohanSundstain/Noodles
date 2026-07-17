@@ -57,7 +57,6 @@ def selection_of_locations(call):
 	if user_id not in locations: 
 		locations[user_id] = {}
 	if type == "main":
-
 		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
 		servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
 		new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
