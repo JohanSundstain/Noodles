@@ -175,7 +175,7 @@ def start(message):
 	database_manager.create_new_user(user_id, referrer)
 
 	try:
-		if is_admin(user_id):
+		if is_admin(user_id) or is_owner(user_id):
 			keyboard = admin_menu_keyboard()
 		else:
 			keyboard = user_menu_keyboard()
@@ -394,11 +394,12 @@ def router(message):
 		return
 
 	if text == STATISTIC_BUTTON:
-		statistic_handler(message)
+		if is_admin(user_id) or is_owner(user_id):
+			statistic_handler(message)
 		return
 
 	if text == TEMP_LINK_BUTTON:
-		if is_admin(user_id):
+		if is_admin(user_id) or is_owner(user_id):
 			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())	
 		return	
 

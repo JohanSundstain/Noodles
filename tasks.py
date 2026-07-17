@@ -245,21 +245,20 @@ def send_user_stat(user_id):
 
 def send_statistic(message):
 	user_id = message.from_user.id
-	if is_admin(user_id):
-		num_all_users = len(database_manager.get_all_user_ids())
-		num_active_users = len(database_manager.get_active_user_ids())
-		today = datetime.now(timezone.utc)
-		month_sales = database_manager.get_month_sales(today.year, today.month)
-		statistic_message = f"""
-			<b>📊 Статистика пользователей</b>\n
-			👥 Всего пользователей: <b>{num_all_users}</b>\n
-			✅ С активной подпиской: <b>{num_active_users}</b>\n\n
-			<b>💰 Продажи за текущий месяц</b>\n
-			📅 Период: <b>{today.strftime("%m.%Y")}</b>\n
-			💵 Выручка: <b>{month_sales} ₽</b>"""
+	num_all_users = len(database_manager.get_all_user_ids())
+	num_active_users = len(database_manager.get_active_user_ids())
+	today = datetime.now(timezone.utc)
+	month_sales = database_manager.get_month_sales(today.year, today.month)
+	statistic_message = f"""
+		<b>📊 Статистика пользователей</b>\n
+		👥 Всего пользователей: <b>{num_all_users}</b>\n
+		✅ С активной подпиской: <b>{num_active_users}</b>\n\n
+		<b>💰 Продажи за текущий месяц</b>\n
+		📅 Период: <b>{today.strftime("%m.%Y")}</b>\n
+		💵 Выручка: <b>{month_sales} ₽</b>"""
 		
-		bot.send_message(user_id, 
-				statistic_message,
-				reply_markup=cancel_keyboard(),
-				parse_mode='HTML')
+	bot.send_message(user_id, 
+		statistic_message,
+		reply_markup=cancel_keyboard(),
+		parse_mode='HTML')
 		
