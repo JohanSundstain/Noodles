@@ -182,12 +182,12 @@ def delete_several_user(req: UsersRequest, _=Security(verify_api_key)):
 				if user_index:
 					if remove_external_user(user_index):
 						deleted.append(user_id)
+						user_index_cache.invalidate()
 					else:
 						failed.append(user_id)
 				else:
 					not_found.append(user_id)
 
-			user_index_cache.invalidate()
 			
 			return {"deleted": deleted, "failed" : failed, "not_found": not_found}
 			
