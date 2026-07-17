@@ -7,7 +7,7 @@ from servers import server_manager
 from workers import task_manager
 
 from tasks import (
-	switch_country_task,
+	selection_of_locations,
 	create_subscription,
 	get_and_send_link,
 	create_temp_link,
@@ -59,7 +59,7 @@ def cancel_handler(call):
 
 def country_handler(call):
 	bot.answer_callback_query(call.id)
-	task_manager.set_task(switch_country_task, call)
+	task_manager.set_task(selection_of_locations, call)
 
 
 def link_handler(call):
@@ -340,8 +340,16 @@ def handle_load_command(message):
 	server_id = parts[1]
 	if is_owner(message.from_user.id):
 		task_manager.set_task(server_load, server_id)
-	
 
+@bot.message_handler(commands=['job'])
+def handle_load_command(message):
+	
+	from admin_funcs import run_daily
+
+	if is_owner(message.from_user.id):
+		run_daily()
+		#task_manager.set_task(run_daily)
+	
 
 @bot.message_handler(func=lambda m: True)
 def router(message):
@@ -391,10 +399,6 @@ def callback(call):
 			return
 
 		if data.startswith('country:'):
-			country_handler(call)
-			return
-		
-		if data.startswith('backup_country:'):
 			country_handler(call)
 			return
 

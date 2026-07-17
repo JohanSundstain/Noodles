@@ -53,6 +53,22 @@ class APIClient:
 		except Exception as e:
 			logger.error(f"DELETE ERROR: {e}")
 
+
+	def delete_users(self, user_ids: list[int]):
+		try:
+			response = self.session.delete(
+				f"{self.base_url}/users",
+				json={"user_ids": user_ids},
+				timeout=10
+			)
+
+			data = response.json()
+			logger.info(f"DELETE [{response.status_code}]: {data}")
+			return data
+
+		except Exception as e:
+			logger.error(f"DELETE ERROR: {e}")
+
 	# ------------------------
 	# CHECK USER EXISTS
 	# ------------------------

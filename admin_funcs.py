@@ -1,6 +1,7 @@
 
 from database import database_manager
 from servers import server_manager
+from scheduler import daily_job
 import time
 
 from utils import (
@@ -75,3 +76,6 @@ def server_load(server_id):
 	server_load = database_manager.get_servers_load([server_id])
 	send_temp_message(bot, OWNER_ID, f"{server_load}", 30)
 	
+
+def run_daily():
+	daily_job()

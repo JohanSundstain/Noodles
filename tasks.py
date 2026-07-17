@@ -54,6 +54,8 @@ def selection_of_locations(call):
 	user_id = call.from_user.id
 	country = call.data.split(":")[1]
 	type = call.data.split(":")[2]
+	if user_id not in locations: 
+		locations[user_id] = {}
 	if type == "main":
 
 		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
@@ -63,7 +65,6 @@ def selection_of_locations(call):
 		"""Запоминаем изменения основных серверов"""
 		locations[user_id]['new_user_server_id'] = new_server_id
 		locations[user_id]['prev_user_server_id'] = database_manager.get_user_server_id(user_id)
-
 		bot.edit_message_text( "✈️ Выберите резервную локацию", call.message.chat.id, call.message.message_id, reply_markup=country_keyboard(country))
 	else:
 		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
@@ -80,11 +81,10 @@ def selection_of_locations(call):
 def switch_country_task(call):
 	global locations
 	user_id = call.from_user.id
-
 	if is_admin(user_id) or is_owner(user_id):
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_server_id']) # обновляем страну мэйна в базе
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_backup_id'], main=False) # обновляем страну бэкапа в базе
-		admin_message = f"""✅ Локации изменены.\n
+		admin_message = f""" ✅ Локации изменены.\n
 				⛓️ Получить ссылки: <code>Статус</code>"""
 		
 		bot.edit_message_text(admin_message,
@@ -115,7 +115,7 @@ def switch_country_task(call):
 					bot.edit_message_text(f"❌ Ошибка создания пользователя.", call.message.chat.id,  call.message.message_id, reply_markup=cancel_keyboard())
 					return
 				
-			user_message = f"""✅ Локации изменены.\n
+			user_message = f""" ✅ Локации изменены.\n
 				❗️Старые ссылки будут удалены.\n
 				⛓️ Получить ссылки: <code>Статус</code>."""
 			bot.edit_message_text(user_message, call.message.chat.id, call.message.message_id, reply_markup=cancel_keyboard(), parse_mode='HTML')
@@ -123,7 +123,7 @@ def switch_country_task(call):
 			message = f"❌ Сначала оформите подписку."
 			bot.edit_message_text(message, call.message.chat.id, call.message.message_id, reply_markup=cancel_keyboard())
 
-		locations.pop(user_id, None)	
+	locations.pop(user_id, None)	
 
 
 def get_and_send_link(call):
@@ -184,7 +184,7 @@ def create_temp_link(call):
 	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается...', 30)
 
 	plan = call.data.split(":")[1]
-	admin_server_id = database_manager.get_user_main_server_id(ADMIN_ID) # получаем id сервера админа
+	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
 
 	if admin_server_id == 'none': # админ не выбрал локацию
 		send_temp_message(bot, ADMIN_ID, "❌ Не выбрана локация.", 30)
@@ -209,23 +209,32 @@ def create_temp_link(call):
 
 def send_user_stat(user_id):
 	paid_days = database_manager.get_paid_days(user_id)
-	location_id = database_manager.get_user_server_id(user_id)
-	if location_id is None:
-		bot.send_message(user_id, 
-			f"❌ Не удалось загрузить локацию",
-			reply_markup=status_keyboard(),
-			parse_mode='HTML')
+	main_location_id = database_manager.get_user_server_id(user_id)
+	backup_location_id = database_manager.get_user_server_id(user_id, main=False)
+	if main_location_id is None:
+		bot.send_message(user_id, f"❌ Не удалось загрузить основную локацию", reply_markup=status_keyboard())
+	if backup_location_id is None:
+		bot.send_message(user_id, f"❌ Не удалось загрузить резервную локацию", reply_markup=status_keyboard())
+
 	
-	country_conf = server_manager.get_country_by_server_id(location_id)
+	country_conf_main = server_manager.get_country_by_server_id(main_location_id)
+	country_conf_backup = server_manager.get_country_by_server_id(backup_location_id)
 	if is_admin(user_id) or is_owner(user_id):
 		bot.send_message(user_id, 
-			f"Локация: {country_conf.emoji} {country_conf.name}\nВаш ID: <code>{user_id}</code>",
+			f"""
+				<b>🌍 Ваши локации:</b>\n
+				Основная  локация: {country_conf_main.emoji} {country_conf_main.name}\n
+				Резервная локация: {country_conf_backup.emoji} {country_conf_backup.name}\n
+				Ваш ID: <code>{user_id}</code>""",
 			reply_markup=status_keyboard(),
 			parse_mode='HTML')
 	else:
 		if paid_days > 0:
 			bot.send_message(user_id, 
-				f"У вас осталось: {paid_days} д.\nЛокация: {country_conf.emoji} {country_conf.name}\nВаш ID: <code>{user_id}</code>",
+				f"""<b>📆 У вас осталось: {paid_days} д.</b>\n
+				Основная локация: {country_conf_main.emoji} {country_conf_main.name}\n
+				Резервная локация: {country_conf_backup.emoji} {country_conf_backup.name}\n
+				Ваш ID: <code>{user_id}</code>""",
 				reply_markup=status_keyboard(),
 				parse_mode='HTML')
 		else:
