@@ -124,13 +124,17 @@ def create_link(user_id):
 	
 		base_url = (
 			f"vless://{uuid}@{ip}:443"
-			f"?type={type}"
+
 			f"&security=reality"
-			f"&pbk={pbk}"
-			f'&fp=chrome'
 			f"&sni={sni}"
+			f'&fp=chrome'
+			f"&pbk={pbk}"
 			f"&sid={sid}"
-			f"&mode={spx}"
+
+
+
+			f"?type={type}"
+			f"&spx={spx}"
 			f"&flow={flow}"
 			f"#{srv_name}")	
 		
