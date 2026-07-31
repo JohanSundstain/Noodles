@@ -1,5 +1,6 @@
 local_secrets.py
 debug_secrets.py
+test_api.py
 *.db
 *.log
 database
