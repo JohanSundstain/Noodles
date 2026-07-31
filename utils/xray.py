@@ -116,7 +116,7 @@ def create_link(user_id):
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
 	encoded_path = quote(path, safe="")
 	spx = config["inbounds"][0]["streamSettings"]["realitySettings"]["spiderX"]
-	encoded_spx = quote(spx, safe="")
+	
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
 	sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
@@ -133,7 +133,7 @@ def create_link(user_id):
 		f"&sni={sni}"
 		f"&sid={sid}"
 		f"&path={encoded_path}"
-		f"&spx={encoded_spx}"
+		f"&spx={spx}"
 		f"#{srv_name}")	
 	
 	return base_url
