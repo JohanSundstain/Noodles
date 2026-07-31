@@ -7,15 +7,13 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 
 from utils import (
-	get_user_index,
-	get_user_index_str,
-	create_external_user,
-	load_user_link,
-	remove_external_user,
-	is_admin,
+	create_user,
+	create_link,
+	get_client,
+	delete_users,
 	is_owner,
-	generate_secure_code,
-	create_temp_user
+	is_admin,
+	generate_secure_code
 )
 
 from logger import logger
@@ -56,19 +54,20 @@ def verify_api_key(api_key: str = Security(api_key_header)):
 # MODELS
 # ------------------------
 class UserRequest(BaseModel):
-	user_id: int
+	user_id: str
 
 
 class DeleteRequest(BaseModel):
-	user_id: int
+	user_id: str
 
 
 class ScheduleRequest(BaseModel):
-	user_id: int
+	user_id: str
 	seconds: int = 3600
 
+
 class UsersRequest(BaseModel):
-	user_ids: list[int]
+	user_ids: list[str]
 
 # ------------------------
 # API (Защищенные эндпоинты)
@@ -80,17 +79,8 @@ def create_user(req: UserRequest, _=Security(verify_api_key)):
 
 	with write_lock:
 		try:
-			if get_user_index(user_id):
-				return {"status": "ok"}
-			
-			url = create_external_user(user_id)
-
-			if not url:
-				return {"status": "failed"}
-			else:
-				user_index_cache.invalidate() 
-				return {"status": "ok",}
-			
+			create_user(user_id)
+			return {"status": "ok",}			
 		except HTTPException:
 			raise
 		except Exception as e:
@@ -105,22 +95,19 @@ def get_temp_link(req: ScheduleRequest, _=Security(verify_api_key)):
 	if is_admin(user_id) or is_owner(user_id):
 		with write_lock:
 			try:
-				temp_name = 't'+generate_secure_code(8)
-				url = create_temp_user(temp_name)	
-				if not url:
-					return {"status": "failed", "details":"could not create temp user"}
-				else:
-					def delete():
-						with write_lock:
-							try:
-								link_index = get_user_index_str(temp_name)
-								remove_external_user(link_index)
-							except Exception as e:
-								logger.error(f"scheduled delete error: {e}")
+				temp_name = 'temp'+generate_secure_code(8)
+				create_user(temp_name)	
+				url = create_link(temp_name)
+				def delete():
+					with write_lock:
+						try:
+							delete_users([temp_name])
+						except Exception as e:
+							logger.error(f"scheduled delete error: {e}")
 
-					threading.Timer(req.seconds, delete).start()
+				threading.Timer(req.seconds, delete).start()
 
-					return {"status" : "ok", "link": url}				
+				return {"status" : "ok", "link": url}				
 			except HTTPException:
 				raise
 			except Exception as e:

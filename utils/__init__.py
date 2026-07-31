@@ -1,25 +1,22 @@
 
-from .xray import (
-	load_user_link,
-	create_external_user,
-	create_temp_user,
-	remove_external_user,
-	get_user_index,
-	get_user_index_str,
-	generate_secure_code,
+from .new_xray import(
+	create_link,
+	create_user,
+	get_user_list,
+	get_client,
+	delete_users,
 	is_admin,
-	is_owner
+	is_owner,
+	generate_secure_code
 )
 
-
 __all__ = [
-	'generate_secure_code'
 	'is_admin',
+	'generate_secure_code',
 	'is_owner',
-	'load_user_link',
-	'create_external_user',
-	'remove_external_user',
-	'get_user_index'
-	'get_user_index_str',
-	'create_temp_user'
+	'create_link',
+	'create_user',
+	'delete_users',
+	'get_user_list',
+	'get_client'
 ]
