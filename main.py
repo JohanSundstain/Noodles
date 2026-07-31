@@ -111,92 +111,41 @@ def get_temp_link(req: ScheduleRequest, _=Security(verify_api_key)):
 			except HTTPException:
 				raise
 			except Exception as e:
-				logger.exception("create_user crashed")
-				raise HTTPException(status_code=500, detail=str(e))
+				logger.exception("create temp link crashed")
+				return {"status" : "failed", "details": "create temp link crashed"}		
 	else:
 		return {"status": "faild", "details":"permision denied"}
 
 
 @app.get("/user/{user_id}/exists")
-def check_user(user_id: int, _=Security(verify_api_key)):
-	index = get_user_index(user_id)
-	return { "exists": index is not None}
+def check_user(user_id: str, _=Security(verify_api_key)):
+	client = get_client(user_id)
+	return { "exists": client is not None}
 
 
 @app.get("/user/{user_id}/link")
-def get_link(user_id: int, _=Security(verify_api_key)):
-		
-	link = load_user_link(user_id)
-	if not link:
-		return { "status": "failed", "details":"load_user_link() failed"}
-	else:
+def get_link(user_id: str, _=Security(verify_api_key)):
+
+	try:
+		link = create_link(user_id)
 		return { "status": "ok", "link": link}
+	except HTTPException:
+		raise
+	except Exception as e:
+		logger.exception("create user crashed")
+		return {"status": "failed", "details": "create user crashed"}
+
 
 
 @app.delete("/user")
-def delete_user(req: DeleteRequest, _=Security(verify_api_key)):
-	user_id = req.user_id
-
-	with write_lock:
-		try:
-			user_index = get_user_index(user_id)
-			if not user_index:
-				return {"status": "failed", "details": "User not found"}
-
-			if not remove_external_user(user_index):
-				return {"status": "failed", "details": "rmuser failed"}
-
-			user_index_cache.invalidate()
-			return {"status": "ok"}
-			
-		except HTTPException:
-			raise
-		except Exception as e:
-			logger.exception("delete_user crashed")
-			raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/users")
-def delete_several_user(req: UsersRequest, _=Security(verify_api_key)):
+def delete_user(req: UsersRequest, _=Security(verify_api_key)):
 	user_ids = req.user_ids
-	deleted = []
-	failed = []
-	not_found = []
 	with write_lock:
 		try:
-			for user_id in user_ids:
-				user_index = get_user_index(user_id)
-				if user_index:
-					if remove_external_user(user_index):
-						deleted.append(user_id)
-						user_index_cache.invalidate()
-					else:
-						failed.append(user_id)
-				else:
-					not_found.append(user_id)
-
-			
-			return {"deleted": deleted, "failed" : failed, "not_found": not_found}
-			
+			delete_users(user_ids)
+			return {"status": "ok"}
 		except HTTPException:
 			raise
 		except Exception as e:
-			logger.exception("delete_user crashed")
-			raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/user/schedule-delete")
-def schedule_delete(req: ScheduleRequest, _=Security(verify_api_key)):
-	def delete():
-		with write_lock:
-			try:
-				user_index = get_user_index(req.user_id)
-				if user_index:
-					if remove_external_user(user_index):
-						user_index_cache.invalidate()
-			except Exception as e:
-				logger.error(f"scheduled delete error: {e}")
-
-	threading.Timer(req.seconds, delete).start()
-
-	return {"status": "scheduled", "seconds": req.seconds}
+			logger.exception("delete user crashed")
+			return {"status": "failed", "details": "delete user crashed"}
