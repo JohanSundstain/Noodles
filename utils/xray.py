@@ -136,8 +136,8 @@ def create_link(user_id):
 		f"&sni={sni}"
 		f"&sid={sid}"
 		f"&path={encoded_path}"
-		f'&mode={mode}',
-		f'&mode={spx}',
+		f"&mode={mode}"
+		f"&mode={spx}"
 		f"#{srv_name}")	
 	
 	return base_url
