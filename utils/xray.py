@@ -114,6 +114,7 @@ def create_link(user_id):
 	uuid = client["id"]
 	ip = get_ip()
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
+	mode = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["mode"]
 	encoded_path = quote(path, safe="")	
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
@@ -131,6 +132,7 @@ def create_link(user_id):
 		f"&sni={sni}"
 		f"&sid={sid}"
 		f"&path={encoded_path}"
+		f'&mode={mode}',
 		f"#{srv_name}")	
 	
 	return base_url
