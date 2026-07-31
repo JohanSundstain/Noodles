@@ -36,12 +36,11 @@ class DatabaseConnection:
 		# Создаем таблицы внутри database/bot.db
 		Base.metadata.create_all(self.engine)
 		
-		self._migrate_old_db()
+		#self._migrate_old_db()
 		
 	def _migrate_old_db(self):
 		with self.SessionLocal() as session:
 			try:
-				# Проверяем, существует ли уже колонка current_server
 				session.execute(text("SELECT backup_server FROM users LIMIT 1"))
 			except Exception:
 				# Если упало с ошибкой — значит колонки нет, добавляем её!
