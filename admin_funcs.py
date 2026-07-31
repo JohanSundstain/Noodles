@@ -27,50 +27,26 @@ def get_info(user_id):
 	backup_server_id =  database_manager.get_user_server_id(user_id, main=False)
 	paid_days =	database_manager.get_paid_days(user_id)
 	
-
-	
 	send_temp_message(bot, OWNER_ID, f"main server ID: {main_server_id}\nbackup server ID: {backup_server_id}\nPlan: {paid_days}", 30)
 
 def is_on_server(user_id, server_id):
+	user_id_str = str(user_id)
 	api_client = server_manager.get_api_server(server_id)
-	answer = api_client.user_exists(user_id)
+	answer = api_client.user_exists(user_id_str)
 	is_on_server = 'false'
 	if answer["exists"]:
 		is_on_server = 'true'
 
 	send_temp_message(bot, OWNER_ID, f"server ID: {server_id}\nis on server: {is_on_server}", 30)
 
-def set_server(user_id, server_id):
-	old_server_id = database_manager.get_user_server_id(user_id)
-	if old_server_id != 'none':
-		api_server = server_manager.get_api_server(old_server_id)
-		api_server.schedule_delete(user_id, 600)
-
-	api_server = server_manager.get_api_server(server_id)
-	database_manager.update_user_server(user_id, server_id)
-	answer = api_server.create_user(user_id)
-	if answer['status'] == "ok":
-		send_temp_message(bot, OWNER_ID, f"servers success: {user_id}", 30)
-	else:
-		send_temp_message(bot, OWNER_ID, f"servers failed: {user_id}", 30)
-
-	new_server_id = database_manager.get_user_server_id(user_id)
-	if new_server_id == server_id:
-		send_temp_message(bot, OWNER_ID, f"success: {user_id}", 30)
-	else:
-		send_temp_message(bot, OWNER_ID, f"failed: {user_id}", 30)
-
 
 def create(user_id, server_id, main):
-	
+	user_id_str = str(user_id)
+
 	api_server = server_manager.get_api_server(server_id)
 	database_manager.update_user_server(user_id, server_id, main=main)
-	query = api_server.user_exists(user_id)
-	if query['exists']:
-		send_temp_message(bot, OWNER_ID, f"user already exists: {user_id}", 30)
-		return
-	else:
-		query = api_server.create_user(user_id)
+
+	query = api_server.create_user(user_id_str)
 
 	if query['status'] == "ok":
 		send_temp_message(bot, OWNER_ID, f"servers success: {user_id}", 30)
@@ -79,9 +55,9 @@ def create(user_id, server_id, main):
 
 	new_server_id = database_manager.get_user_server_id(user_id, main=main)
 	if new_server_id == server_id:
-		send_temp_message(bot, OWNER_ID, f"success: {user_id}", 30)
+		send_temp_message(bot, OWNER_ID, f"success db: {user_id}", 30)
 	else:
-		send_temp_message(bot, OWNER_ID, f"failed: {user_id}", 30)
+		send_temp_message(bot, OWNER_ID, f"failed db: {user_id}", 30)
 
 
 def reduce_days(user_id, days):

@@ -297,17 +297,6 @@ def handle_info_command(message):
 		task_manager.set_task(get_info, user_id)
 
 
-@bot.message_handler(commands=['switch'])
-def handle_switch_command(message):
-	
-	from admin_funcs import set_server
-
-	parts = message.text.split()
-	user_id = int(parts[1])
-	serv_id = parts[2]
-	if is_owner(message.from_user.id):
-		task_manager.set_task(set_server, user_id, serv_id)
-
 @bot.message_handler(commands=['check'])
 def handle_switch_command(message):
 	

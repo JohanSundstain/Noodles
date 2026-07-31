@@ -15,35 +15,27 @@ def run_schedule():
 		schedule.run_pending()
 		time.sleep(60)
 
-
 def daily_job():
-	expired_users = set(database_manager.bulk_decrease_days())
+	expired_users, almost_expired_users = database_manager.bulk_decrease_days()
 	logger.info(f"Осталься один день у {list(expired_users)} польз.")
 
+
+	"""Удаляем ссылки тех, у кого подчти кончилась подписка"""
+	for user_id in almost_expired_users:	
+		"""Все остальные сервера"""
+		bot.send_message(user_id, "⚠️ Ваша подписка истекает через 3 дня")
+
 	"""Удаляем ссылки тех, у кого закончилась подписка"""
-	deletion_dict = {}
-	for user_id in list(expired_users):	
+	for user_id in expired_users:	
 		"""Все остальные сервера"""
 
 		bot.send_message(user_id, "⚠️ У вас закончилась подписка!")
 
-		all_servers = server_manager.get_all_server_id()
-
-		for server_id in all_servers:
-			if server_id != 'none':
-				if server_id in deletion_dict:
-					deletion_dict[server_id].append(user_id)
-				else:
-					deletion_dict[server_id] = [user_id]
-
-	for key, value in deletion_dict.items():
-		try:
-			api_client = server_manager.get_api_server(key)
-			result = api_client.delete_users(value)
-			logger.info(f"=====SERVER ID===== {key}")
-			logger.info(f"deleted: {result['deleted']}\nfailed: {result['failed']}\nnot found: {result['not_found']}")
-		except Exception as e:
-			logger.error(f"Ошибка создания запроса на удаление нескольких пользователей: {e}")
+	all_servers = server_manager.get_all_server_id()
+	for server_id in all_servers:
+		if server_id != 'none':
+			api_client = server_manager.get_api_server(server_id)
+			api_client.delete_users([str(user_id) for user_id in expired_users])
 
 
 def start_scheduler():

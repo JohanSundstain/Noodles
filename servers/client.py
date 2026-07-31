@@ -4,8 +4,6 @@ from utils import logger
 
 from config import API_TOKEN
 
-IP = "45.43.159.220:8000"
-
 class APIClient:
 	def __init__(self, id, ip, api_key):
 		self.ip = ip
@@ -20,7 +18,7 @@ class APIClient:
 	# ------------------------
 	# CREATE USER
 	# ------------------------
-	def create_user(self, user_id: int):
+	def create_user(self, user_id: str):
 		try:
 			response = self.session.post(
 				f"{self.base_url}/user/create",
@@ -38,11 +36,11 @@ class APIClient:
 	# ------------------------
 	# DELETE USER
 	# ------------------------
-	def delete_user(self, user_id: int):
+	def delete_user(self, user_ids: list[str]):
 		try:
 			response = self.session.delete(
 				f"{self.base_url}/user",
-				json={"user_id": user_id},
+				json={"user_ids": user_ids},
 				timeout=10
 			)
 
@@ -57,7 +55,7 @@ class APIClient:
 	def delete_users(self, user_ids: list[int]):
 		try:
 			response = self.session.delete(
-				f"{self.base_url}/users",
+				f"{self.base_url}/user",
 				json={"user_ids": user_ids},
 				timeout=10
 			)
@@ -72,7 +70,7 @@ class APIClient:
 	# ------------------------
 	# CHECK USER EXISTS
 	# ------------------------
-	def user_exists(self, user_id: int):
+	def user_exists(self, user_id: str):
 		try:
 			response = self.session.get(
 				f"{self.base_url}/user/{user_id}/exists",
@@ -89,7 +87,7 @@ class APIClient:
 	# ------------------------
 	# GET USER LINK
 	# ------------------------
-	def get_link(self, user_id: int):
+	def get_link(self, user_id: str):
 		try:
 			response = self.session.get(
 				f"{self.base_url}/user/{user_id}/link",
@@ -106,7 +104,7 @@ class APIClient:
 	# ------------------------
 	# GET TEMP LINK
 	# ------------------------
-	def get_temp_link(self, user_id: int, seconds: int = 3600):
+	def get_temp_link(self, user_id: str, seconds: int = 3600):
 		try:
 			response = self.session.post(
 				f"{self.base_url}/user/temp_link",
@@ -124,26 +122,6 @@ class APIClient:
 		except Exception as e:
 			logger.error(f"TEMP LINK ERROR: {e}")
 
-	# ------------------------
-	# SCHEDULE DELETE
-	# ------------------------
-	def schedule_delete(self, user_id: int, seconds: int = 3600):
-		try:
-			response = self.session.post(
-				f"{self.base_url}/user/schedule-delete",
-				json={
-					"user_id": user_id,
-					"seconds": seconds
-				},
-				timeout=10
-			)
-
-			data = response.json()
-			logger.info(f"SCHEDULE DELETE [{response.status_code}]: {data}")
-			return data
-
-		except Exception as e:
-			logger.error(f"SCHEDULE ERROR: {e}")
 
 	def ip(self):
 		return self.ip

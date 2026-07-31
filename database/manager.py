@@ -78,6 +78,11 @@ class DatabaseManager(DatabaseConnection):
 				select(User.user_id).where(User.paid_days == 1)
 			).all()
 
+			# 2. Находим тех, у кого осталось 3 дня подписки 
+			almost_expired_users = session.scalars(
+				select(User.user_id).where(User.paid_days == 4)
+			).all()
+
 			session.execute(
 				update(User)
 				.where(User.paid_days == 1)
@@ -91,7 +96,7 @@ class DatabaseManager(DatabaseConnection):
 				.values(paid_days=User.paid_days - 1)
 			)
 			
-			return list(expired_users)
+			return (list(expired_users), list(almost_expired_users))
 		
 	def decrease_days(self, user_id: int, days: int):
 		with self.session_scope() as session:

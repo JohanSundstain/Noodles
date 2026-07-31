@@ -80,6 +80,7 @@ def selection_of_locations(call):
 def switch_country_task(call):
 	global locations
 	user_id = call.from_user.id
+	user_id_str = str(user_id)
 	if is_admin(user_id) or is_owner(user_id):
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_server_id']) # обновляем страну мэйна в базе
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_backup_id'], main=False) # обновляем страну бэкапа в базе
@@ -100,16 +101,16 @@ def switch_country_task(call):
 			new_main_api_client = server_manager.get_api_server(locations[user_id]['new_user_server_id'])
 			new_backup_api_client = server_manager.get_api_server(locations[user_id]['new_user_backup_id'])
 
-			answer_main = new_main_api_client.user_exists(user_id)
+			answer_main = new_main_api_client.user_exists(user_id_str)
 			if not answer_main['exists']:
-				query = new_main_api_client.create_user(user_id)
+				query = new_main_api_client.create_user(user_id_str)
 				if query['status'] != 'ok':
 					bot.edit_message_text(f"❌ Ошибка создания пользователя.", call.message.chat.id,  call.message.message_id, reply_markup=cancel_keyboard())
 					return
 
-			answer_backup = new_backup_api_client.user_exists(user_id)
+			answer_backup = new_backup_api_client.user_exists(user_id_str)
 			if not answer_backup['exists']:
-				query = new_backup_api_client.create_user(user_id)
+				query = new_backup_api_client.create_user(user_id_str)
 				if query['status'] != 'ok':
 					bot.edit_message_text(f"❌ Ошибка создания пользователя.", call.message.chat.id,  call.message.message_id, reply_markup=cancel_keyboard())
 					return
@@ -129,6 +130,7 @@ def get_and_send_link(call):
 	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
 
 	user_id = call.from_user.id
+	user_id_str = str(user_id)
 	link_type = call.data.split(":")[1]
 	
 	if link_type == "main":
@@ -142,7 +144,7 @@ def get_and_send_link(call):
 		return
 
 	user_api_client = server_manager.get_api_server(user_server_id) # получаем апи клиент к серверу юзера
-	answer = user_api_client.get_link(user_id)
+	answer = user_api_client.get_link(user_id_str)
 
 	if answer["status"] == "ok":
 		vless_url = answer["link"]
@@ -180,31 +182,35 @@ def create_subscription(user_id=None, plan=None, call=None):
 
 
 def create_temp_link(call):
-	send_temp_message(bot, ADMIN_ID, '⏳ Запрос обрабатывается...', 30)
+	user_id = call.from_user.id
+	user_id_str = str(user_id)
 
-	plan = call.data.split(":")[1]
-	admin_server_id = database_manager.get_user_server_id(ADMIN_ID) # получаем id сервера админа
+	if is_admin(user_id) or is_owner(user_id):
+		send_temp_message(bot, user_id, '⏳ Запрос обрабатывается...', 30)
 
-	if admin_server_id == 'none': # админ не выбрал локацию
-		send_temp_message(bot, ADMIN_ID, "❌ Не выбрана локация.", 30)
-		return 
+		plan = call.data.split(":")[1]
+		admin_server_id = database_manager.get_user_server_id(user_id) # получаем id сервера админа
+
+		if admin_server_id == 'none': # админ не выбрал локацию
+			send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
+			return 
+		
+		api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
+
+		answer = api_client.get_temp_link(user_id_str) # делаем запрос на сервер, чтобы создать временную ссылку
 	
-	api_client = server_manager.get_api_server(admin_server_id) # получаем api клиента для сервера админа
-
-	answer = api_client.get_temp_link(ADMIN_ID) # делаем запрос на сервер, чтобы создать временную ссылку
- 
-	if answer["status"] == "ok":
-		vless_url = answer['link']
-		code = generate_secure_code(6)
-		temp_code_deleter(code, int(plan))
-		buffer = qrcode_generate(vless_url)
-		send_temp_photo(bot, ADMIN_ID, buffer, 120, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
-		send_temp_message(bot, ADMIN_ID, f"Код: <code>{code}</code>", 120, parse_mode="HTML")
-	else:
-		send_temp_message(bot, ADMIN_ID, f"⚠️ Ошибка генерации временной ссылки!", 120, parse_mode="HTML")
-		logger.error(f"Ошибки вызова get_temp_link(): {answer['details']}")
-		return
-	
+		if answer["status"] == "ok":
+			vless_url = answer['link']
+			code = generate_secure_code(6)
+			temp_code_deleter(code, int(plan))
+			buffer = qrcode_generate(vless_url)
+			send_temp_photo(bot, user_id, buffer, 120, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
+			send_temp_message(bot, user_id, f"Код: <code>{code}</code>", 120, parse_mode="HTML")
+		else:
+			send_temp_message(bot, user_id, f"⚠️ Ошибка генерации временной ссылки!", 120, parse_mode="HTML")
+			logger.error(f"Ошибки вызова get_temp_link(): {answer['details']}")
+			return
+		
 
 def send_user_stat(user_id):
 	paid_days = database_manager.get_paid_days(user_id)
