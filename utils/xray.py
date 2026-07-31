@@ -130,7 +130,7 @@ def create_link(user_id):
 			f"&pbk={pbk}"
 			f"&sid={sid}"
 			f"&spx={spx}"
-			f"?type={type}"
+			f"&type={type}"
 			f"&flow={flow}"
 			f"#{srv_name}")	
 		
