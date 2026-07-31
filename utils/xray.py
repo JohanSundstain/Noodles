@@ -114,10 +114,10 @@ def create_link(user_id):
 	uuid = client["id"]
 	ip = get_ip()
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
+	encoded_path = quote(path, safe="")	
 	mode = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["mode"]
 
 
-	encoded_path = quote(path, safe="")	
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
 	sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
@@ -126,7 +126,6 @@ def create_link(user_id):
 	type = config["inbounds"][0]["streamSettings"]["network"]
 	srv_name = SERVER_NAME
 
-	encoded_path = quote(path, safe="")
 	base_url = (
 		f"vless://{uuid}@{ip}:443"
 		f"?type={type}"
