@@ -124,7 +124,6 @@ def create_link(user_id):
 	
 		base_url = (
 			f"vless://{uuid}@{ip}:443"
-
 			f"&security=reality"
 			f"&sni={sni}"
 			f'&fp=chrome'
