@@ -17,7 +17,6 @@ from utils import (
 )
 
 from logger import logger
-from cache import user_index_cache
 
 app = FastAPI()
 
