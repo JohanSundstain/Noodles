@@ -71,7 +71,7 @@ def restart_xray():
         return False
 
 
-def create_user(user_id):
+def create_xray_user(user_id):
 	with open(XRAY_CONF_PATH, "r", encoding="utf-8") as f:
 			config = json.load(f)
 

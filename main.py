@@ -7,7 +7,7 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 
 from utils import (
-	create_user,
+	create_xray_user,
 	create_link,
 	get_client,
 	delete_users,
@@ -78,7 +78,7 @@ def create_user(req: UserRequest, _=Security(verify_api_key)):
 
 	with write_lock:
 		try:
-			create_user(user_id)
+			create_xray_user(user_id)
 			return {"status": "ok",}			
 		except HTTPException:
 			raise
