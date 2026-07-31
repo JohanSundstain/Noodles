@@ -1,5 +1,6 @@
 local_secrets.py
 debug_secrets.py
+test_*
 *.db
 *.db-shm
 *.db-wal
