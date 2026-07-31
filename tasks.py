@@ -132,19 +132,23 @@ def get_and_send_link(call):
 	user_id = call.from_user.id
 	user_id_str = str(user_id)
 	link_type = call.data.split(":")[1]
-	
+
 	if link_type == "main":
 		user_server_id = database_manager.get_user_server_id(user_id) # получаем id сервера пользователя
 	else:
 		user_server_id = database_manager.get_user_server_id(user_id, main=False)
-
+	
 	if user_server_id == 'none': # если не выбрана локация, то отказываем в генерации
 		bot.delete_message(user_id, call.message.message_id)
 		send_temp_message(bot, user_id, "❌ Не выбрана локация.", 30)
 		return
 
 	user_api_client = server_manager.get_api_server(user_server_id) # получаем апи клиент к серверу юзера
-	answer = user_api_client.get_link(user_id_str)
+
+	if is_admin(user_id) or is_owner(user_id):
+		answer =  user_api_client.get_link("main")
+	else:
+		answer = user_api_client.get_link(user_id_str)
 
 	if answer["status"] == "ok":
 		vless_url = answer["link"]

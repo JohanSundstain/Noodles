@@ -31,11 +31,12 @@ def daily_job():
 
 		bot.send_message(user_id, "⚠️ У вас закончилась подписка!")
 
-	all_servers = server_manager.get_all_server_id()
-	for server_id in all_servers:
-		if server_id != 'none':
-			api_client = server_manager.get_api_server(server_id)
-			api_client.delete_users([str(user_id) for user_id in expired_users])
+	if expired_users != []:
+		all_servers = server_manager.get_all_server_id()
+		for server_id in all_servers:
+			if server_id != 'none':
+				api_client = server_manager.get_api_server(server_id)
+				api_client.delete_users([str(user_id) for user_id in expired_users])
 
 
 def start_scheduler():
