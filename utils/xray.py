@@ -115,23 +115,25 @@ def create_link(user_id):
 	ip = get_ip()
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
 	encoded_path = quote(path, safe="")
+	spx = config["inbounds"][0]["streamSettings"]["spiderX"]
+	encoded_spx = quote(spx, safe="")
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
 	sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
-	mode = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["mode"]
+	type = config["inbounds"][0]["streamSettings"]["realitySettings"]["network"]
 	srv_name = SERVER_NAME
 
 	encoded_path = quote(path, safe="")
 	base_url = (
 		f"vless://{uuid}@{ip}:443"
-		f"?type=xhttp"
+		f"?type={type}"
 		f"&security=reality"
 		f"&pbk={pbk}"
 		f'&fp=chrome'
 		f"&sni={sni}"
 		f"&sid={sid}"
 		f"&path={encoded_path}"
-		f"&mode={mode}"
+		f"&spx={encoded_spx}"
 		f"#{srv_name}")	
 	
 	return base_url
