@@ -95,7 +95,6 @@ def get_temp_link(req: ScheduleRequest, _=Security(verify_api_key)):
 		with write_lock:
 			try:
 				temp_name = 'temp'+generate_secure_code(8)
-				create_user(temp_name)	
 				url = create_xray_user(temp_name)
 				def delete():
 					with write_lock:
