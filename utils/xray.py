@@ -111,7 +111,7 @@ def create_link(user_id):
 	client = get_client(user_id, config)
 	if client is None:
 		raise RuntimeError(f"Пользователь {user_id} не существует")
-	uuid = client["ip"]
+	uuid = client["id"]
 	ip = get_ip()
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
 	encoded_path = quote(path, safe="")
