@@ -4,26 +4,21 @@ import requests
 import uuid
 import subprocess
 
-
 from logger import logger
-
-
 
 from urllib.parse import quote
 
-#from config import (
-#	XRAY_CONF_PATH,
-#	SERVER_TYPE,
-#	IP
-#)
-#from logger import logger
+from config import (
+	XRAY_CONF_PATH,
+	SERVER_NAME,
+	IP,
+	ADMIN_ID,
+	OWNER_ID,
+	PBK
+)
+from logger import logger
 
-XRAY_CONF_PATH = "/usr/local/etc/xray/config.json"
-IP = None
-PBK = "nhel6cAx8AhDIn20wtm3hl2ALMqo_PgMPB5Y_1-23Gg"
-ADMIN_ID = 1
-OWNER_ID = 1
-SERVER_NAME = 'kz'
+
 
 def generate_secure_code(n : int) -> int:
 	return ''.join(__import__('secrets').choice('0123456789') for _ in range(n))
