@@ -1,5 +1,5 @@
 
-from .new_xray import(
+from .xray import(
 	create_link,
 	create_user,
 	get_user_list,
