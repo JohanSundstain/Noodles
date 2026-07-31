@@ -115,7 +115,7 @@ def create_link(user_id):
 	ip = get_ip()
 	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
 	encoded_path = quote(path, safe="")
-	spx = config["inbounds"][0]["streamSettings"]["spiderX"]
+	spx = config["inbounds"][0]["streamSettings"]["realitySettings"]["spiderX"]
 	encoded_spx = quote(spx, safe="")
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
