@@ -78,7 +78,7 @@ def create_xray_user(user_id):
 	if get_client(user_id, config) is not None:
 		return
 
-	new_user = { "email": user_id, "id": str(uuid.uuid4()) }
+	new_user = { "email": user_id, "id": str(uuid.uuid4()), "flow": "xtls-rprx-vision" }
 
 	config["inbounds"][0]["settings"]["clients"].append(new_user)
 
@@ -107,31 +107,38 @@ def delete_users(users):
 def create_link(user_id):
 	with open(XRAY_CONF_PATH, "r", encoding="utf-8") as f:
 		config = json.load(f)
+		
+		client = get_client(user_id, config)
+		if client is None:
+			raise RuntimeError(f"Пользователь {user_id} не существует")
+		uuid = client["id"]
+		flow = client["flow"]
+		ip = get_ip()
+		path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
+		mode = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["mode"]
 	
-	client = get_client(user_id, config)
-	if client is None:
-		raise RuntimeError(f"Пользователь {user_id} не существует")
-	uuid = client["id"]
-	ip = get_ip()
-	path = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["path"]
-	encoded_path = quote(path, safe="")
-	pbk = PBK
-	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
-	sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
-	mode = config["inbounds"][0]["streamSettings"]["xhttpSettings"]["mode"]
-	srv_name = SERVER_NAME
 
-	encoded_path = quote(path, safe="")
-	base_url = (
-		f"vless://{uuid}@{ip}:443"
-		f"?type=xhttp"
-		f"&security=reality"
-		f"&pbk={pbk}"
-		f'&fp=chrome'
-		f"&sni={sni}"
-		f"&sid={sid}"
-		f"&path={encoded_path}"
-		f"&mode={mode}"
-		f"#{srv_name}")	
+		encoded_path = quote(path, safe="")	
+		pbk = PBK
+		sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
+		sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
+		spx = config["inbounds"][0]["streamSettings"]["realitySettings"]["spiderX"][0]
 	
-	return base_url
+		type = config["inbounds"][0]["streamSettings"]["network"]
+		srv_name = SERVER_NAME
+	
+		encoded_path = quote(path, safe="")
+		base_url = (
+			f"vless://{uuid}@{ip}:443"
+			f"?type={type}"
+			f"&security=reality"
+			f"&pbk={pbk}"
+			f'&fp=chrome'
+			f"&sni={sni}"
+			f"&sid={sid}"
+			f"&path={encoded_path}"
+			f"&mode={spx}"
+			f"&flow={flow}"
+			f"#{srv_name}")	
+		
+		return base_url
