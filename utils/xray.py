@@ -120,7 +120,7 @@ def create_link(user_id):
 	pbk = PBK
 	sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
 	sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
-	type = config["inbounds"][0]["streamSettings"]["realitySettings"]["network"]
+	type = config["inbounds"][0]["streamSettings"]["network"]
 	srv_name = SERVER_NAME
 
 	encoded_path = quote(path, safe="")
