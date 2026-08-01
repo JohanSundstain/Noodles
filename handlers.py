@@ -353,7 +353,7 @@ def handle_load_command(message):
 	if is_owner(message.from_user.id):
 		task_manager.set_task(create, user_id, server_id, main)
 
-@bot.message_handler(commands=['create'])
+@bot.message_handler(commands=['switch'])
 def handle_load_command(message):
 	
 	from admin_funcs import switch_server
