@@ -117,7 +117,6 @@ def create_link(user_id):
 		pbk = PBK
 		sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
 		sid = config["inbounds"][0]["streamSettings"]["realitySettings"]["shortIds"][0]
-		spx = config["inbounds"][0]["streamSettings"]["realitySettings"]["spiderX"][0]
 	
 		type = config["inbounds"][0]["streamSettings"]["network"]
 		srv_name = SERVER_NAME
@@ -132,6 +131,7 @@ def create_link(user_id):
 			f"&spx=/"
 			f"&type={type}"
 			f"&flow={flow}"
+			f'encryption=none'
 			f"#{srv_name}")	
 		
 		return base_url
