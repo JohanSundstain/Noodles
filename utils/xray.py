@@ -131,7 +131,7 @@ def create_link(user_id):
 			f"&spx=/"
 			f"&type={type}"
 			f"&flow={flow}"
-			f'encryption=none'
+			f'&encryption=none'
 			f"#{srv_name}")	
 		
 		return base_url
