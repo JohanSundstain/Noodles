@@ -352,6 +352,19 @@ def handle_load_command(message):
 	main = True if type == 'main' else False
 	if is_owner(message.from_user.id):
 		task_manager.set_task(create, user_id, server_id, main)
+
+@bot.message_handler(commands=['create'])
+def handle_load_command(message):
+	
+	from admin_funcs import switch_server
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	server_id = parts[2]
+	type = parts[3]
+	main = True if type == 'main' else False
+	if is_owner(message.from_user.id):
+		task_manager.set_task(switch_server, user_id, server_id, main)
 	
 	
 @bot.message_handler(func=lambda m: True)

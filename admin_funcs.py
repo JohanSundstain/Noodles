@@ -72,7 +72,11 @@ def reduce_days(user_id, days):
 def server_load(server_id):
 	server_load = database_manager.get_servers_load([server_id])
 	send_temp_message(bot, OWNER_ID, f"{server_load}", 30)
-	
+
+
+def switch_server(user_id, server_id, main):
+	database_manager.update_user_server(user_id, server_id, main=main)
+
 
 def run_daily():
 	daily_job()
