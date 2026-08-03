@@ -202,16 +202,12 @@ def handle_file_upload(message):
 
 		if message.content_type == 'photo':
 			bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, reply_markup=keyboard)
-			bot.send_photo(OWNER_ID, message.photo[-1].file_id, caption=caption, reply_markup=keyboard)
 		elif message.content_type == 'document':
 			bot.send_document(ADMIN_ID, message.document.file_id, caption=caption, reply_markup=keyboard)
-			bot.send_document(OWNER_ID, message.document.file_id, caption=caption, reply_markup=keyboard)
 		elif message.content_type == 'video':
 			bot.send_video(ADMIN_ID, message.video.file_id, caption=caption, reply_markup=keyboard)
-			bot.send_video(OWNER_ID, message.video.file_id, caption=caption, reply_markup=keyboard)
 		else:
 			bot.send_message(ADMIN_ID, caption + '\n\n❗ Неизвестный тип файла')
-			bot.send_message(OWNER_ID, caption + '\n\n❗ Неизвестный тип файла')
 
 		try:
 			bot.delete_message(user_id, message.message_id)
