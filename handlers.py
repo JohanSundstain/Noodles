@@ -365,6 +365,19 @@ def handle_load_command(message):
 	main = True if type == 'main' else False
 	if is_owner(message.from_user.id):
 		task_manager.set_task(switch_server, user_id, server_id, main)
+
+
+@bot.message_handler(commands=['switchall'])
+def handle_load_command(message):
+	
+	from admin_funcs import switch_all
+
+	parts = message.text.split()
+	server_id = parts[1]
+	type = parts[2]
+	main = True if type == 'main' else False
+	if is_owner(message.from_user.id):
+		task_manager.set_task(switch_all, server_id, main)
 	
 	
 @bot.message_handler(func=lambda m: True)

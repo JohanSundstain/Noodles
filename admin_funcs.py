@@ -77,6 +77,8 @@ def server_load(server_id):
 def switch_server(user_id, server_id, main):
 	database_manager.update_user_server(user_id, server_id, main=main)
 
+def switch_all(server_id, main):
+	database_manager.update_all_user_server(server_id, main)
 
 def run_daily():
 	daily_job()

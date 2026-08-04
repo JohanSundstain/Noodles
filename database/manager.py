@@ -139,6 +139,16 @@ class DatabaseManager(DatabaseConnection):
 				else:
 					user.backup_server = server_id
 
+	def update_all_user_server(self, server_id: str, main: bool = True) -> None:
+		with self.session_scope() as session:
+			stmt = update(User)
+
+			if main:
+				stmt = stmt.values(current_server=server_id)
+			else:
+				stmt = stmt.values(backup_server=server_id)
+
+			session.execute(stmt)
 
 	def get_month_sales(self, year: int, month: int) -> int:
 		month_start = datetime(year=year, month=month, day=1, tzinfo=timezone.utc)
