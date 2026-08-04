@@ -29,6 +29,13 @@ class ServerInterface:
 				APIClient(id="kz-1", ip="45.43.159.220:8000", api_key=API_TOKEN), 
 			]
 		),
+		"NL": CountryConfig(
+			name="Нидерланды",
+			emoji="🇳🇱",
+			servers=[
+					APIClient(id="nl-1", ip="2.26.134.157:8000", api_key=API_TOKEN), 
+				]
+			),
 		# "HK": CountryConfig(
 		# 	name="Гонконг",
 		# 	emoji="🇭🇰",
