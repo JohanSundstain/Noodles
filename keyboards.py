@@ -43,7 +43,6 @@ def user_menu_keyboard():
 	return markup
 
 def owner_meny_keyboard():
-
 	pass
 
 #######################
