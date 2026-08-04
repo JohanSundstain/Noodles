@@ -125,7 +125,7 @@ def create_link(user_id):
 			f"vless://{uuid}@{ip}:443"
 			f"?security=reality"
 			f"&sni={sni}"
-			f'&fp=firefox'
+			f'&fp=chrome'
 			f"&pbk={pbk}"
 			f"&sid={sid}"
 			f"&spx=/"
