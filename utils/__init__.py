@@ -7,7 +7,8 @@ from .xray import(
 	delete_users,
 	is_admin,
 	is_owner,
-	generate_secure_code
+	generate_secure_code,
+	restart_xray
 )
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
 	'create_xray_user',
 	'delete_users',
 	'get_user_list',
-	'get_client'
+	'get_client',
+	'restart_xray'
 ]
