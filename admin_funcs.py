@@ -79,6 +79,7 @@ def switch_server(user_id, server_id, main):
 
 def switch_all(server_id, main):
 	database_manager.update_all_user_server(server_id, main)
+	send_temp_message(bot, OWNER_ID, f"success", 30)
 
 def run_daily():
 	daily_job()
