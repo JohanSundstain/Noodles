@@ -3,7 +3,6 @@ import json
 from copy import deepcopy
 from utils import get_user_list, restart_xray
 
-
 from config import XRAY_CONF_PATH
 
 def convert_tcp_to_xhttp(path: str = "/", mode: str = "auto") -> dict:
@@ -18,6 +17,7 @@ def convert_tcp_to_xhttp(path: str = "/", mode: str = "auto") -> dict:
 		new_client = {"email":client["email"], "id":client["id"]}
 		new_clients.append(new_client)
 
+	config['inbounds'][0]['settings']['clients'] = new_clients
 
 	for inbound in config.get("inbounds", []):
 		stream = inbound.get("streamSettings")
@@ -42,3 +42,6 @@ def convert_tcp_to_xhttp(path: str = "/", mode: str = "auto") -> dict:
 
 	restart_xray()
 	
+
+if __name__ == "__main__":
+	convert_tcp_to_xhttp()
