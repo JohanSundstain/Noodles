@@ -117,7 +117,7 @@ class DatabaseManager(DatabaseConnection):
 			else:
 				result = session.execute(
 					select(User.backup_server, func.count(User.user_id))
-					.where(User.backup_server.in_(server_ids))
+					.where(User.backup_server.in_(server_ids) & User.paid_days > 0)
 					.group_by(User.backup_server)
 				).all()
 
