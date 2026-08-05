@@ -23,9 +23,9 @@ from keyboards import(
 from config import (
 	ADMIN_ID,
 	OWNER_ID,
-	DAYS,
+	PLANS,
 	BONUS,
-	PRICES
+
 )
 
 from bot import bot
@@ -33,6 +33,17 @@ from bot import bot
 from keyboards import (
 	cancel_keyboard
 )
+
+def validate_user(user_id):
+	if is_admin(user_id) or is_owner(user_id):
+		return True
+
+	paid_days = database_manager.get_paid_days(user_id)
+	if paid_days <=0 :
+		return False 
+
+	return True
+
 
 def broadcast(text):
 	user_ids = database_manager.get_all_user_ids()
@@ -48,33 +59,27 @@ def broadcast(text):
 			print(f"Unexpected error for {user_id}: {e}")
 
 
-locations = {} # {user_id : {new_user_server_id, prev_user_server_id, new_user_backup_id, prev_user_backup_id}}
-def selection_of_locations(call):
+def select_of_locations(call):
 	global locations
 	user_id = call.from_user.id
-	country = call.data.split(":")[1]
+	server_id = call.data.split(":")[1]
 	type = call.data.split(":")[2]
-	if user_id not in locations: 
-		locations[user_id] = {}
+
+	if not validate_user(user_id):
+		bot.edit_message_text( "❌ Сначала оформите подписку.", call.message.chat.id, call.message.message_id, reply_markup=cancel_keyboard())
+		return
+
 	if type == "main":
-		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
-		servers_load = database_manager.get_servers_load(country_ids) # получам загрузку каждого сервера
-		new_server_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-
+		
 		"""Запоминаем изменения основных серверов"""
-		locations[user_id]['new_user_server_id'] = new_server_id
-		locations[user_id]['prev_user_server_id'] = database_manager.get_user_server_id(user_id)
-		bot.edit_message_text( "✈️ Выберите резервную локацию", call.message.chat.id, call.message.message_id, reply_markup=country_keyboard(country))
+		database_manager.update_user_server(user_id, server_id)
+		bot.edit_message_text( "✈️ Выберите резервную локацию", call.message.chat.id, call.message.message_id, reply_markup=country_keyboard(server_id))
 	else:
-		country_ids = server_manager.get_country_ids(country) # получаем все серверы данной страны
-		servers_load = database_manager.get_servers_load(country_ids, main=False) # получам загрузку каждого сервера
-		new_backup_id = min(servers_load, key=servers_load.get) # сервер с минимальным кол-вом юзером
-
-		"""Запоминаем изменения резервных серверов"""
-		locations[user_id]['new_user_backup_id'] = new_backup_id
-		locations[user_id]['prev_user_backup_id'] = database_manager.get_user_server_id(user_id, main=False)
-
-		switch_country_task(call)
+		database_manager.update_user_server(user_id, server_id, main=False)
+		admin_message = f""" ✅ Локации изменены.\n
+						⛓️ Получить ссылки: <code>Статус</code>"""
+				
+		bot.edit_message_text(admin_message, call.message.chat.id,  call.message.message_id, reply_markup=cancel_keyboard(), parse_mode='HTML')
 
 
 def switch_country_task(call):
@@ -84,14 +89,7 @@ def switch_country_task(call):
 	if is_admin(user_id) or is_owner(user_id):
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_server_id']) # обновляем страну мэйна в базе
 		database_manager.update_user_server(user_id, locations[user_id]['new_user_backup_id'], main=False) # обновляем страну бэкапа в базе
-		admin_message = f""" ✅ Локации изменены.\n
-				⛓️ Получить ссылки: <code>Статус</code>"""
 		
-		bot.edit_message_text(admin_message,
-					call.message.chat.id, 
-					call.message.message_id,
-					reply_markup=cancel_keyboard(),
-					parse_mode='HTML')
 	else:
 		paid_days = database_manager.get_paid_days(user_id)
 		if paid_days > 0:
@@ -127,11 +125,15 @@ def switch_country_task(call):
 
 
 def get_and_send_link(call):
-	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
-
 	user_id = call.from_user.id
 	user_id_str = str(user_id)
 	link_type = call.data.split(":")[1]
+
+	if not validate_user(user_id):
+		bot.edit_message_text( "❌ Сначала оформите подписку.", call.message.chat.id, call.message.message_id, reply_markup=cancel_keyboard())
+		return
+
+	send_temp_message(bot, call.from_user.id, "⏳ Генерация ссылки...")
 
 	if link_type == "main":
 		user_server_id = database_manager.get_user_server_id(user_id) # получаем id сервера пользователя
@@ -144,36 +146,46 @@ def get_and_send_link(call):
 		return
 
 	user_api_client = server_manager.get_api_server(user_server_id) # получаем апи клиент к серверу юзера
-
+	
 	if is_admin(user_id) or is_owner(user_id):
-		answer =  user_api_client.get_link("main")
+		query =  user_api_client.get_link("main")
 	else:
-		answer = user_api_client.get_link(user_id_str)
+		query = user_api_client.user_exists(user_id_str)
+		if query['exists']:
+			query = user_api_client.get_link(user_id_str)
+		else:
+			query = user_api_client.create_user(user_id_str)
+			if query['status'] == "ok":
+				query = user_api_client.get_link(user_id_str)
+			else:
+				send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
+				logger.error(f"Неудалось создать пользователя")
+				return
 
-	if answer["status"] == "ok":
-		vless_url = answer["link"]
+	if query["status"] == "ok":
+		vless_url = query["link"]
 		buffer = qrcode_generate(vless_url)
 		send_temp_photo(bot, user_id, buffer, 30, caption=f'<code>{vless_url}</code>', parse_mode='HTML')
 	else:
 		send_temp_message(bot, user_id, "❌ Проблемы с сервером, обратитесь в поддержку.", 30)
-		logger.error(f"Ошибка получения ссылки от сервера {answer['details']}")
+		logger.error(f"Ошибка получения ссылки от сервера {query['details']}")
 
 
 def create_subscription(user_id=None, plan=None, call=None):
 
-	result = database_manager.create_subscription(user_id, DAYS[plan])
-	database_manager.create_transaction(user_id, PRICES[plan])
+	result = database_manager.create_subscription(user_id, PLANS[plan]["days"])
+	database_manager.create_transaction(user_id, PLANS[plan]["price"])
 
-	send_temp_message(bot, user_id, f'✅ Вы купили {DAYS[plan]} дней подписки', 120)
+	send_temp_message(bot, user_id, f'✅ Вы купили {PLANS[plan]["days"]} дней подписки', 120)
 
 	if result is not None:
 		inviter_id = result['inviter_id']
 		bot.send_message(inviter_id, f'✅ Бонус {BONUS} д. получен!')
 
-	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PRICES.get(plan, "неизвестно")} ₽')
+	bot.send_message(OWNER_ID, f'✅ Куплена подписка на сумму {PLANS[plan]["price"]} ₽')
 	info_message = """Сообщение исчезнет через 120 сек.\n
-	Получить ссылку: <code>Статус</code>\n
-	❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
+		Получить ссылку: <code>Статус</code>\n
+		❗️ Обязательно выберите локацию, если купили подписку впервые.\n"""
 
 	send_temp_message(bot, user_id, info_message, 120, parse_mode='HTML')
 
@@ -181,7 +193,7 @@ def create_subscription(user_id=None, plan=None, call=None):
 		message_id = call.message.message_id
 		text = f"""✅ ПОДТВЕРЖДЕНО\n
 		<b>ID: <code>{user_id}</code></b>
-		<b>Plan: <code>{DAYS[plan]}</code></b>"""
+		<b>Plan: <code>{PLANS[plan]['days']}</code></b>"""
 		bot.edit_message_caption(text, ADMIN_ID, message_id, parse_mode="HTML")
 
 
@@ -225,15 +237,14 @@ def send_user_stat(user_id):
 	if backup_location_id is None:
 		bot.send_message(user_id, f"❌ Не удалось загрузить резервную локацию", reply_markup=status_keyboard())
 
-	
-	country_conf_main = server_manager.get_country_by_server_id(main_location_id)
-	country_conf_backup = server_manager.get_country_by_server_id(backup_location_id)
+	main_server_api = server_manager.get_api_server(main_location_id)
+	backup_server_api = server_manager.get_api_server(backup_location_id)
 	if is_admin(user_id) or is_owner(user_id):
 		bot.send_message(user_id, 
 			f"""
 				<b>🌍 Ваши локации:</b>\n
-				Основная  локация: {country_conf_main.emoji} {country_conf_main.name}\n
-				Резервная локация: {country_conf_backup.emoji} {country_conf_backup.name}\n
+				Основная  локация: {str(main_server_api)}\n
+				Резервная локация: {str(backup_server_api)}\n
 				Ваш ID: <code>{user_id}</code>""",
 			reply_markup=status_keyboard(),
 			parse_mode='HTML')
@@ -241,8 +252,8 @@ def send_user_stat(user_id):
 		if paid_days > 0:
 			bot.send_message(user_id, 
 				f"""<b>📆 У вас осталось: {paid_days} д.</b>\n
-				Основная локация: {country_conf_main.emoji} {country_conf_main.name}\n
-				Резервная локация: {country_conf_backup.emoji} {country_conf_backup.name}\n
+				Основная локация: {str(main_server_api)}\n
+				Резервная локация: {str(backup_server_api)}\n
 				Ваш ID: <code>{user_id}</code>""",
 				reply_markup=status_keyboard(),
 				parse_mode='HTML')

@@ -1,15 +1,8 @@
 from telebot import types
 
-from config import (
-	BUY_BUTTON,
-	TEMP_LINK_BUTTON,
-	STATISTIC_BUTTON,
-	REF_BUTTON,
-	STATUS_BUTTON,
-	HELP_BUTTON,
-	LOCATION_BUTTON)
-
+from config import PLANS, BUTTONS
 from servers import server_manager
+from database import database_manager
 
 def cancel_keyboard():
 	markup = types.InlineKeyboardMarkup()
@@ -22,66 +15,80 @@ def cancel_keyboard():
 ######################
 
 def admin_menu_keyboard():
-	markup = types.ReplyKeyboardMarkup(
-		resize_keyboard=True,
-		is_persistent=True
-	)
-	markup.row(types.KeyboardButton(TEMP_LINK_BUTTON),types.KeyboardButton(LOCATION_BUTTON))
-	markup.row(types.KeyboardButton(STATISTIC_BUTTON), types.KeyboardButton(STATUS_BUTTON))
-	markup.row(types.KeyboardButton(HELP_BUTTON))
+	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, is_persistent=True)
+	markup.row(types.KeyboardButton(BUTTONS['temp']), types.KeyboardButton(BUTTONS['location']))
+	markup.row(types.KeyboardButton(BUTTONS['statistic']), types.KeyboardButton(BUTTONS['status']))
+	markup.row(types.KeyboardButton(BUTTONS['help']))
 	return markup
 
 
 def user_menu_keyboard():
-	markup = types.ReplyKeyboardMarkup(
-		resize_keyboard=True,
-		is_persistent=True
-	)
-	markup.row(types.KeyboardButton(BUY_BUTTON),types.KeyboardButton(LOCATION_BUTTON))
-	markup.row(types.KeyboardButton(REF_BUTTON),types.KeyboardButton(STATUS_BUTTON))
-	markup.row(types.KeyboardButton(HELP_BUTTON))
+	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, is_persistent=True)
+	markup.row(types.KeyboardButton(BUTTONS['buy']),types.KeyboardButton(BUTTONS['location']))
+	markup.row(types.KeyboardButton(BUTTONS['ref']),types.KeyboardButton(BUTTONS['status']))
+	markup.row(types.KeyboardButton(BUTTONS['help']))
 	return markup
-
-def owner_meny_keyboard():
-	pass
 
 #######################
 # USER KEYBOARDS
 ######################
 
-
 def country_keyboard(main_country=None):
 	markup = types.InlineKeyboardMarkup()
-	COUNTRIES = server_manager.get_contries()
-	
-	for country in COUNTRIES:
-		if country == main_country:
+
+	api_servers = server_manager.get_all_api()
+	id_servers = server_manager.get_all_id()
+
+	buttons = []
+
+	for api_server in api_servers:
+		if api_server.id == main_country:
 			continue
-		if country != "UNKNOWN":
+
+		if api_server.id != "none":
 			if main_country is None:
-				markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}:main"))
+				result = database_manager.get_servers_load(id_servers)
+				text = f"{str(api_server)} [{result.get(api_server.id, 0)}]"
+				callback = f"country:{api_server.id}:main"
 			else:
-				markup.add(types.InlineKeyboardButton(f"{COUNTRIES[country].emoji} {COUNTRIES[country].name}", callback_data=f"country:{country}:backup"))
+				result = database_manager.get_servers_load(id_servers, main=False)
+				text = f"{str(api_server)} [{result.get(api_server.id, 0)}]"
+				callback = f"country:{api_server.id}:backup"
+
+			buttons.append(
+				types.InlineKeyboardButton(
+					text,
+					callback_data=callback
+				)
+			)
+
+	# добавляем по 2 кнопки в ряд
+	for i in range(0, len(buttons), 2):
+		markup.row(*buttons[i:i+2])
 
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
+
 	return markup
 	
 def buy_keyboard():
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("1 месяц - 100₽", callback_data=f"plan:1"))
-	markup.add(types.InlineKeyboardButton("3 месяца - 250₽", callback_data=f"plan:3"))
-	markup.add(types.InlineKeyboardButton("6 месяцев - 450₽", callback_data=f"plan:6"))
+
+	for index, plan in enumerate(PLANS):
+		markup.add(types.InlineKeyboardButton(f"{plan['days']} дней - {plan['price']}₽", callback_data=f"plan:{index}"))
+
 	markup.add(types.InlineKeyboardButton("Ввести код", callback_data=f"plan:-1"))
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
 
 def temp_link_keyboard():
 	markup = types.InlineKeyboardMarkup()
-	markup.add(types.InlineKeyboardButton("1 месяц", callback_data=f"temp:1"))
-	markup.add(types.InlineKeyboardButton("3 месяца", callback_data=f"temp:3"))
-	markup.add(types.InlineKeyboardButton("6 месяцев", callback_data=f"temp:6"))
+
+	for index, plan in enumerate(PLANS):
+		markup.add(types.InlineKeyboardButton(f"{plan['days']} д. - {plan['price']}₽", callback_data=f"temp:{index}"))
+		
 	markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="cancel"))
 	return markup
+
 
 def status_keyboard():
 	markup = types.InlineKeyboardMarkup()

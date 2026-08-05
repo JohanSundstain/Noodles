@@ -1,5 +1,5 @@
 import os
-from local_secrets import (
+from debug_secrets import (
 	token, admin_id, 
 	owner_id, number,
 	api_key, bot_name)
@@ -14,13 +14,18 @@ API_TOKEN = api_key
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///bot.db')
 
-BUY_BUTTON = "💳 Купить подписку"
-STATISTIC_BUTTON = "📈 Статистика"
-TEMP_LINK_BUTTON = "🔗 Временная ссылка"
-STATUS_BUTTON = "🗂 Статус"
-REF_BUTTON = "🔗 Реферальная ссылка"
-HELP_BUTTON = "🔍 Справка"
-LOCATION_BUTTON = "🌏 Выбрать локацию"
+BUTTONS = {
+	"buy" 		: 	"💳 Купить подписку",
+	"statistic" : 	"📈 Статистика",
+	"temp" 		: 	"🔗 Временная ссылка",
+	"status" 	:	"🗂 Статус",
+	"ref" 		:	"🔗 Реферальная ссылка",
+	"help" 		: 	"🔍 Справка",
+	"location" 	: 	"🌏 Выбрать локацию"
+}
 
-PRICES = {1: 100, 3: 250, 6: 450, -1: 0}
-DAYS = {1: 30, 3: 90, 6: 180, -1: 1}
+PLANS = [
+ {"price" : 100, "days" : 30},
+#{"price" : 100, "days" : 30},
+#{"price" : 100, "days" : 30}
+]

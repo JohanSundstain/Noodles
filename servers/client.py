@@ -4,24 +4,26 @@ from utils import logger
 
 from config import API_TOKEN
 
-class APIClient:
-	def __init__(self, id, ip, api_key):
-		self.ip = ip
-		self.id = id
-		self.base_url = f"http://{ip}"
-		self.session = requests.Session()
+class APIServer:
+	def __init__(self, id, emoji, ip, type, api_key):
+		self._id = id
+		self._ip = ip
+		self._transport = type
+		self._emoji = emoji
+		self._base_url = f"http://{ip}"
+		self._session = requests.Session()
 		
 		# Добавляем заголовок авторизации один раз. 
 		# Теперь requests будет автоматически слать его с каждым запросом.
-		self.session.headers.update({"X-API-Key": api_key})
+		self._session.headers.update({"X-API-Key": api_key})
 
 	# ------------------------
 	# CREATE USER
 	# ------------------------
 	def create_user(self, user_id: str):
 		try:
-			response = self.session.post(
-				f"{self.base_url}/user/create",
+			response = self._session.post(
+				f"{self._base_url}/user/create",
 				json={"user_id": user_id},
 				timeout=10
 			)
@@ -38,8 +40,8 @@ class APIClient:
 	# ------------------------
 	def delete_user(self, user_ids: list[str]):
 		try:
-			response = self.session.delete(
-				f"{self.base_url}/user",
+			response = self._session.delete(
+				f"{self._base_url}/user",
 				json={"user_ids": user_ids},
 				timeout=10
 			)
@@ -54,8 +56,8 @@ class APIClient:
 
 	def delete_users(self, user_ids: list[int]):
 		try:
-			response = self.session.delete(
-				f"{self.base_url}/user",
+			response = self._session.delete(
+				f"{self._base_url}/user",
 				json={"user_ids": user_ids},
 				timeout=10
 			)
@@ -72,8 +74,8 @@ class APIClient:
 	# ------------------------
 	def user_exists(self, user_id: str):
 		try:
-			response = self.session.get(
-				f"{self.base_url}/user/{user_id}/exists",
+			response = self._session.get(
+				f"{self._base_url}/user/{user_id}/exists",
 				timeout=10
 			)
 
@@ -89,8 +91,8 @@ class APIClient:
 	# ------------------------
 	def get_link(self, user_id: str):
 		try:
-			response = self.session.get(
-				f"{self.base_url}/user/{user_id}/link",
+			response = self._session.get(
+				f"{self._base_url}/user/{user_id}/link",
 				timeout=10
 			)
 
@@ -106,8 +108,8 @@ class APIClient:
 	# ------------------------
 	def get_temp_link(self, user_id: str, seconds: int = 3600):
 		try:
-			response = self.session.post(
-				f"{self.base_url}/user/temp_link",
+			response = self._session.post(
+				f"{self._base_url}/user/temp_link",
 				json={
 					"user_id": user_id,
 					"seconds": seconds
@@ -123,8 +125,11 @@ class APIClient:
 			logger.error(f"TEMP LINK ERROR: {e}")
 
 
-	def ip(self):
-		return self.ip
+	def __str__(self):
+		return f"{self._id} {self._emoji} ({self._transport})"
 
+
+	@property
 	def id(self):
-		return self.id
+		return self._id
+

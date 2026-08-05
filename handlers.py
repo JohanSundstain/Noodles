@@ -1,19 +1,18 @@
 import sys
 
 from bot import bot
-from config import ADMIN_ID, OWNER_ID, PRICES, NUMBER, DAYS, BOT_LINK
 from database import database_manager
 from servers import server_manager
 from workers import task_manager
 
 from tasks import (
-	selection_of_locations,
+	select_of_locations,
 	create_subscription,
 	get_and_send_link,
 	create_temp_link,
 	send_user_stat,
 	broadcast,
-	send_statistic
+	send_statistic,
 )
 
 from keyboards import (
@@ -23,7 +22,6 @@ from keyboards import (
 	country_keyboard,
 	buy_keyboard,
 	temp_link_keyboard,
-	status_keyboard,
 	admin_approve_reject_keyboard,
 )
 from logger import logger
@@ -36,14 +34,11 @@ from utils import (
 )
 
 from config import (
-	BUY_BUTTON,
-	TEMP_LINK_BUTTON,
-	STATISTIC_BUTTON,
-	REF_BUTTON,
-	STATUS_BUTTON,
-	HELP_BUTTON,
-	LOCATION_BUTTON,
-	BONUS)
+	 ADMIN_ID,
+	 NUMBER, 
+	 BOT_LINK, 
+	 PLANS, 
+	 BUTTONS)
 
 
 # ---------------
@@ -59,7 +54,7 @@ def cancel_handler(call):
 
 def country_handler(call):
 	bot.answer_callback_query(call.id)
-	task_manager.set_task(selection_of_locations, call)
+	task_manager.set_task(select_of_locations, call)
 
 
 def link_handler(call):
@@ -116,7 +111,7 @@ def plan_handler(call):
 	else:
 		message = (
 			f'<b>Вы выбрали:</b> {plan} мес.\n\n'
-			f'<b>Оплата {PRICES[plan]} р. по номеру телефона:</b>\n'
+			f'<b>Оплата {PLANS[plan]["price"]} р. по номеру телефона:</b>\n'
 			f'<code>+{NUMBER}</code>\n'
 			'<b>Банки:</b> Сбер / ТБанк\n\n'
 			'После оплаты отправьте <b>результат операции</b> '
@@ -192,10 +187,6 @@ def handle_file_upload(message):
 		user_id = message.from_user.id
 		username = message.from_user.username or 'no_username'
 		plan = user_plan.pop(user_id)
-
-		if not plan:
-			bot.send_message(user_id, '❗ Сначала выбери тариф')
-			return
 
 		keyboard = admin_approve_reject_keyboard(user_id, plan)
 		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\n\nID: {user_id}'
@@ -385,37 +376,37 @@ def router(message):
 	text = message.text
 	user_id = message.from_user.id
 	
-	if text == BUY_BUTTON:
+	if text == BUTTONS['buy']:
 		if is_work_time():
 			bot.send_message(user_id, "Выберите тариф", reply_markup=buy_keyboard())
 		else:
 			send_temp_message(bot, user_id, "💤 Администратор спит, поппробуйте позже")
 		return
 
-	if text == STATUS_BUTTON:
+	if text == BUTTONS['status']:
 		status_handler(message)
 		return
 	
-	if text == LOCATION_BUTTON:
+	if text == BUTTONS['location']:
 		bot.send_message(user_id, "✈️ Выберите основную локацию", reply_markup=country_keyboard())
 		return
 
-	if text == REF_BUTTON:
+	if text == BUTTONS['ref']:
 		ref_handler(message)
 		return
 	
-	if text == HELP_BUTTON:
+	if text == BUTTONS['help']:
 		help_handler(message)
 		return
 
-	if text == STATISTIC_BUTTON:
+	if text == BUTTONS['statistic']:
 		if is_admin(user_id) or is_owner(user_id):
 			statistic_handler(message)
 		return
 
-	if text == TEMP_LINK_BUTTON:
+	if text == BUTTONS['temp']:
 		if is_admin(user_id) or is_owner(user_id):
-			bot.send_message(user_id, "Выберите тарифк", reply_markup=temp_link_keyboard())	
+			bot.send_message(user_id, "Выберите тариф", reply_markup=temp_link_keyboard())	
 		return	
 
 
