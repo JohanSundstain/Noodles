@@ -189,7 +189,7 @@ def handle_file_upload(message):
 		plan = user_plan.pop(user_id)
 
 		keyboard = admin_approve_reject_keyboard(user_id, plan)
-		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {plan} мес\n\nID: {user_id}'
+		caption = f'🆕 Оплата\nUser: @{username}\nТариф: {PLANS[plan]["price"]} рублей\n\nID: {user_id}'
 
 		if message.content_type == 'photo':
 			bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, reply_markup=keyboard)
