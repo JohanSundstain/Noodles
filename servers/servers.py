@@ -12,8 +12,8 @@ class ServerInterface:
 			#APIServer(id="fi-2",emoji="🇫🇮", ip="45.131.135.21:8000", type='raw', api_key=API_TOKEN), 
 			#APIServer(id="kz-1",emoji="🇰🇿", ip="45.43.159.220:8000", type='raw', api_key=API_TOKEN), 
 			APIServer(id="nl-1",emoji="🇳🇱", ip="2.26.134.157:8000", type='raw', api_key=API_TOKEN), 
+			APIServer(id="de-1",emoji="🇩🇪", ip="185.245.35.242:8000", type='xhttp', api_key=API_TOKEN), 
 			APIServer(id="none",emoji="🏴‍☠️", ip="0.0.0.0:8000", type='none', api_key=API_TOKEN), 
-
 		]
 
 
