@@ -1,80 +1,47 @@
 #!/bin/bash
 
-echo "=== VLESS REALITY installer ==="
+echo "=== VLESS REALITY XHTTP installer ==="
 
 read -p "Порт [443]: " PORT
-PORT=${PORT:-443}
+export port=${PORT:-443}
+export network="xhttp"
 
 echo ""
-echo "Транспорт:"
-echo "1) TCP"
-echo "2) XHTTP"
+echo "XHTTP mode:"
+echo "1) auto"
+echo "2) packet-up"
+echo "3) stream-up"
+read -p "Выбор [auto]: " XHTTP_MODE
+XHTTP_MODE=${XHTTP_MODE:-1}
 
-read -p "Выбор [2]: " TRANSPORT
-TRANSPORT=${TRANSPORT:-2}
+case $XHTTP_MODE in
+    1)
+    export mode="auto"
+    ;;
 
-case $TRANSPORT in
+    2)
+    export mode="packet-up"
+    ;;
 
-1)
-NETWORK="tcp"
-;;
+    3)
+    export mode="stream-up"
+    ;;
 
-2)
-NETWORK="xhttp"
-;;
-
-*)
-echo "Ошибка выбора"
-exit 1
-;;
-
+    *)
+    echo "Ошибка выбора mode"
+    exit 1
+    ;;
 esac
 
-echo ""
-echo "REALITY target:"
-echo "1) Microsoft"
-echo "2) Amazon"
-echo "3) Samsung"
-echo "4) Свой"
-
-read -p "Выбор [1]: " TARGET_CHOICE
-TARGET_CHOICE=${TARGET_CHOICE:-1}
-
-case $TARGET_CHOICE in
-
-1)
-TARGET="www.microsoft.com:443"
-SERVERNAME="www.microsoft.com"
-;;
-
-2)
-TARGET="www.amazon.com:443"
-SERVERNAME="www.amazon.com"
-;;
-
-3)
-TARGET="www.samsung.com:443"
-SERVERNAME="www.samsung.com"
-;;
-
-4)
-read -p "Введите target (example.com:443): " TARGET
-SERVERNAME=$(echo $TARGET | cut -d: -f1)
-;;
-
-*)
-echo "Ошибка"
-exit 1
-;;
-
-esac
-
+read -p "Введите target [github.com:443]: " TARGET
+export target=${TARGET:-"github.com:443"}
+export serverName=$(echo $targer | cut -d: -f1)
 
 echo ""
 echo "Проверьте настройки:"
-echo "Порт: $PORT"
-echo "Transport: $NETWORK"
-echo "Target: $TARGET"
+echo "Порт: $port"
+echo "XHTTP MODE:" $mode
+echo "Target: $target"
 
 read -p "Готово? [Y/n]: " CONFIRM
 
@@ -140,7 +107,7 @@ cat << EOF > /usr/local/etc/xray/config.json
     "inbounds": [
         {
             "listen": "0.0.0.0",
-            "port": "$PORT",
+            "port": "$port",
             "protocol": "vless",
             "settings": {
                 "clients": [
@@ -153,16 +120,17 @@ cat << EOF > /usr/local/etc/xray/config.json
                 "decryption": "none"
             },
             "streamSettings": {
-                "network": "$NETWORK",
+                "network": "$netwoer",
                 "xhttpSettings": {
-                    "path": "/"
+                    "path": "/",
+					"mode": "$mode"
                 },
                 "security": "reality",
                 "realitySettings": {
                     "show": false,
-                    "target": "$TARGET",
+                    "target": "$target",
                     "serverNames": [
-                        "$SERVERNAME"
+                        "$serverName"
 					],
                     "privateKey": "$privatkey",
                     "minClientVer": "",
