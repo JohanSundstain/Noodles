@@ -73,7 +73,6 @@ esac
 echo ""
 echo "Проверьте настройки:"
 echo "Порт: $PORT"
-echo "Пользователей: $USERS"
 echo "Transport: $NETWORK"
 echo "Target: $TARGET"
 
