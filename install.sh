@@ -120,7 +120,7 @@ cat << EOF > /usr/local/etc/xray/config.json
                 "decryption": "none"
             },
             "streamSettings": {
-                "network": "$netwoer",
+                "network": "$network",
                 "xhttpSettings": {
                     "path": "/",
 					"mode": "$mode"
