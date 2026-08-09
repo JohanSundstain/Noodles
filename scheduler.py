@@ -19,7 +19,6 @@ def daily_job():
 	expired_users, almost_expired_users = database_manager.bulk_decrease_days()
 	logger.info(f"Осталься один день у {list(expired_users)} польз.")
 
-
 	"""Пишем тем, у кого подчти кончилась подписка"""
 	for user_id in almost_expired_users:	
 		"""Все остальные сервера"""
@@ -32,11 +31,10 @@ def daily_job():
 		bot.send_message(user_id, "⚠️ У вас закончилась подписка!")
 
 	if expired_users != []:
-		all_servers = server_manager.get_all_server_id()
+		all_servers = server_manager.get_all_api()
 		for server_id in all_servers:
-			if server_id != 'none':
-				api_client = server_manager.get_api_server(server_id)
-				api_client.delete_users([str(user_id) for user_id in expired_users])
+			if server_id.id != 'none':
+				server_id.delete_user(expired_users)
 
 
 def start_scheduler():

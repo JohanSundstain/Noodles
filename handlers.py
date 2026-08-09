@@ -321,6 +321,18 @@ def handle_reduceall_command(message):
 	if is_owner(message.from_user.id):
 		task_manager.set_task(reduce_all, days)
 
+
+@bot.message_handler(commands=['reg'])
+def handle_reg_command(message):
+	
+	from admin_funcs import reg
+
+	parts = message.text.split()
+	user_id = int(parts[1])
+	if is_owner(message.from_user.id):
+		task_manager.set_task(reg, user_id)
+
+
 @bot.message_handler(commands=['load'])
 def handle_load_command(message):
 	

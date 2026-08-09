@@ -29,6 +29,14 @@ def get_info(user_id):
 	
 	send_temp_message(bot, OWNER_ID, f"main server ID: {main_server_id}\nbackup server ID: {backup_server_id}\nPlan: {paid_days}", 30)
 
+def reg(user_id):
+	result = database_manager.create_new_user(user_id)
+	if result is not None:
+		send_temp_message(bot, OWNER_ID, f"success db: {user_id}", 30)
+	else:
+		send_temp_message(bot, OWNER_ID, f"failed db: {user_id}", 30)
+
+
 def is_on_server(user_id, server_id):
 	user_id_str = str(user_id)
 	api_client = server_manager.get_api_server(server_id)
