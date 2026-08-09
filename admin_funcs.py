@@ -73,7 +73,6 @@ def server_load(server_id):
 	server_load = database_manager.get_servers_load([server_id])
 	send_temp_message(bot, OWNER_ID, f"{server_load}", 30)
 
-
 def switch_server(user_id, server_id, main):
 	database_manager.update_user_server(user_id, server_id, main=main)
 
@@ -81,5 +80,6 @@ def switch_all(server_id, main):
 	database_manager.update_all_user_server(server_id, main)
 	send_temp_message(bot, OWNER_ID, f"success", 30)
 
-def run_daily():
-	daily_job()
+def reduce_all(days):
+	for i in range(days):
+		daily_job()
