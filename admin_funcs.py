@@ -82,4 +82,5 @@ def switch_all(server_id, main):
 
 def reduce_all(days):
 	for i in range(days):
-		daily_job()
+		database_manager.bulk_decrease_days()
+	send_temp_message(bot, OWNER_ID, f"success", 30)
