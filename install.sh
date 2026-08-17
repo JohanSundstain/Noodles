@@ -35,7 +35,7 @@ esac
 
 read -p "Введите target [github.com:443]: " TARGET
 export target=${TARGET:-"github.com:443"}
-export serverName=$(echo $targer | cut -d: -f1)
+export serverName=$(echo $target | cut -d: -f1)
 
 echo ""
 echo "Проверьте настройки:"
