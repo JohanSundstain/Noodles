@@ -129,7 +129,7 @@ def create_link(user_id):
 		f"?type={type}"
 		f"&security=reality"
 		f"&pbk={pbk}"
-		f'&fp=chrome'
+		f'&fp=edge'
 		f"&sni={sni}"
 		f"&sid={sid}"
 		f"&path={encoded_path}"
